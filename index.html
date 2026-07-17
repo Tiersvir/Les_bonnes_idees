@@ -6,258 +6,107 @@
     <title>Mon Cerveau Numérique - Moteur d'Astuces</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
-        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f7f6;
-            color: #333;
+            margin: 0; padding: 0; background-color: #f4f7f6; color: #333;
         }
-
         header {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            padding: 40px 20px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            color: white; padding: 40px 20px; text-align: center;
         }
-
-        h1 { margin: 0; font-size: 2.5rem; font-weight: 600; }
-        p.subtitle { margin: 10px 0 25px 0; opacity: 0.9; font-size: 1.1rem; }
-
-        .search-container {
-            max-width: 600px;
-            margin: 0 auto;
-            position: relative;
-        }
-
+        h1 { margin: 0; font-size: 2.2rem; }
+        p.subtitle { margin: 10px 0 25px 0; opacity: 0.9; }
+        .search-container { max-width: 600px; margin: 0 auto; }
         .search-container input {
-            width: 100%;
-            padding: 15px 25px;
-            border: none;
-            border-radius: 30px;
-            font-size: 1.1rem;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            outline: none;
-            transition: all 0.3s ease;
+            width: 100%; padding: 15px 25px; border: none;
+            border-radius: 30px; font-size: 1.1rem; outline: none;
         }
-
-        .search-container input:focus {
-            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-            transform: scale(1.01);
-        }
-
-        .main-container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        .categories {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            margin-bottom: 30px;
-        }
-
+        .main-container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .categories { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 30px; }
         .category-btn {
-            background-color: white;
-            border: 2px solid #2a5298;
-            color: #2a5298;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s ease;
+            background-color: white; border: 2px solid #2a5298; color: #2a5298;
+            padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;
         }
-
-        .category-btn.active, .category-btn:hover {
-            background-color: #2a5298;
-            color: white;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
-        }
-
+        .category-btn.active, .category-btn:hover { background-color: #2a5298; color: white; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
         .card {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
+            background: white; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); cursor: pointer;
+            display: flex; flex-direction: column; transition: transform 0.2s;
         }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-        }
-
-        .card-img {
-            height: 180px;
-            background-color: #ddd;
-            background-size: cover;
-            background-position: center;
-            position: relative;
-        }
-
+        .card:hover { transform: translateY(-5px); }
+        .card-img { height: 150px; background-color: #ddd; background-size: cover; background-position: center; position: relative; }
         .badge {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            background-color: rgba(42, 82, 152, 0.9);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            text-transform: uppercase;
+            position: absolute; top: 12px; left: 12px; background: rgba(42, 82, 152, 0.9);
+            color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;
         }
-
-        .card-content {
-            padding: 20px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .card-title {
-            margin: 0 0 10px 0;
-            font-size: 1.25rem;
-            color: #1e3c72;
-        }
-
-        .card-desc {
-            font-size: 0.95rem;
-            color: #666;
-            line-height: 1.4;
-            margin: 0 0 15px 0;
-            flex-grow: 1;
-        }
-
-        .card-date {
-            font-size: 0.8rem;
-            color: #999;
-            text-align: right;
-        }
-
-        /* Modal / Popup */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.6);
-            backdrop-filter: blur(5px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .modal.active { display: flex; }
-
-        .modal-content {
-            background: white;
-            width: 100%;
-            max-width: 700px;
-            border-radius: 16px;
-            max-height: 85vh;
-            overflow-y: auto;
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 15px; right: 20px;
-            font-size: 2rem;
-            cursor: pointer;
-            color: #aaa;
-            transition: color 0.2s;
-        }
-        .close-btn:hover { color: #333; }
-
-        .modal-body { padding: 30px; }
-        .modal-badge {
-            display: inline-block;
-            background: #2a5298;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-        .modal-title { margin: 0 0 20px 0; color: #1e3c72; font-size: 1.8rem; }
+        .card-content { padding: 20px; flex-grow: 1; }
+        .card-title { margin: 0 0 10px 0; font-size: 1.2rem; color: #1e3c72; }
+        .card-desc { font-size: 0.9rem; color: #666; line-height: 1.4; }
         
-        .screenshot-gallery {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
-            margin: 20px 0;
+        /* Modal Popup */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000;
+            justify-content: center; align-items: center; padding: 20px;
         }
-        .screenshot-gallery img {
-            width: 100%;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white; width: 100%; max-width: 600px; border-radius: 16px;
+            max-height: 80vh; overflow-y: auto; padding: 30px; position: relative;
         }
-
-        .modal-section {
-            margin-bottom: 25px;
-        }
-        .modal-section h3 {
-            border-left: 4px solid #2a5298;
-            padding-left: 10px;
-            color: #2a5298;
-            margin-bottom: 10px;
-        }
-        .modal-section p {
-            line-height: 1.6;
-            color: #444;
-        }
-
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 2rem; cursor: pointer; color: #aaa; }
+        .modal-badge { display: inline-block; background: #2a5298; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; margin-bottom: 15px; }
+        .modal-title { margin: 0 0 20px 0; color: #1e3c72; }
         .source-link {
-            display: inline-block;
-            background: #28a745;
-            color: white;
-            text-decoration: none;
-            padding: 12px 25px;
-            border-radius: 25px;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(40, 167, 69, 0.2);
-            transition: all 0.2s;
-        }
-        .source-link:hover {
-            background: #218838;
-            transform: translateY(-2px);
+            display: inline-block; background: #28a745; color: white; text-decoration: none;
+            padding: 12px 25px; border-radius: 25px; font-weight: bold; margin-top: 20px;
         }
 
-        @media (max-width: 600px) {
-            h1 { font-size: 1.8rem; }
-            .modal-content { max-height: 95vh; }
-            .modal-body { padding: 20px; }
+        /* Styles Admin */
+        .admin-panel {
+            display: none; background: #fff3cd; border: 2px dashed #ffc107;
+            padding: 20px; border-radius: 12px; margin-bottom: 30px;
+        }
+        .admin-panel.active { display: block; }
+        .admin-card {
+            background: white; border: 1px solid #ffeeba; padding: 15px;
+            border-radius: 8px; margin-bottom: 15px; display: flex;
+            flex-direction: column; gap: 10px;
+        }
+        .admin-actions { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-validate {
+            background: #28a745; color: white; border: none; padding: 8px 16px;
+            border-radius: 6px; cursor: pointer; font-weight: bold;
+        }
+        .btn-reject {
+            background: #dc3545; color: white; border: none; padding: 8px 16px;
+            border-radius: 6px; cursor: pointer; font-weight: bold;
+        }
+        .admin-input {
+            width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>Mon Cerveau Numérique</h1>
+        <h1 id="pageTitle">Mon Cerveau Numérique</h1>
         <p class="subtitle">Toutes mes astuces du quotidien, triées et résumées par IA</p>
         <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Rechercher une astuce (ex: soudure, fuite, recette...)...">
+            <input type="text" id="searchInput" placeholder="Rechercher une astuce (ex: fuite, riz, soudure...)...">
         </div>
     </header>
 
     <div class="main-container">
-        <div class="categories" id="categoriesContainer">
+        <!-- Zone Admin Masquée par défaut -->
+        <div class="admin-panel" id="adminPanel">
+            <h2 style="color: #856404; margin-top: 0;">🔧 Espace de validation des brouillons (Admin)</h2>
+            <p>Voici les astuces envoyées par ton robot IA. Relis-les, modifie-les si besoin, puis valide-les pour les publier.</p>
+            <div id="adminQueue"><!-- Rempli par JS --></div>
+        </div>
+
+        <div class="categories" id="categoriesBar">
             <button class="category-btn active" onclick="filterCategory('tous')">Tous</button>
             <button class="category-btn" onclick="filterCategory('plomberie')">Plomberie 🔧</button>
             <button class="category-btn" onclick="filterCategory('electronique')">Électronique ⚡</button>
@@ -273,85 +122,117 @@
     <div class="modal" id="tipModal" onclick="closeModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <span class="close-btn" onclick="document.getElementById('tipModal').classList.remove('active')">&times;</span>
-            <div class="modal-body" id="modalBody"></div>
+            <div id="modalBody"></div>
         </div>
     </div>
 
     <script>
-        const astucesData = [
-            {
-                id: 1,
-                title: "Réparer une fuite de siphon sans outil",
-                category: "plomberie",
-                categoryLabel: "Plomberie 🔧",
-                summary: "Technique rapide utilisant du ruban d'étanchéité en téflon pour stopper un suintement sur un raccord en PVC avant changement du joint.",
-                fullDetail: "Cette vidéo explique comment réagir immédiatement face à une fuite sous l'évier. Si le joint est usé, enrouler 5 à 6 tours de téflon dans le sens du filetage permet de recréer l'étanchéité instantanément en attendant d'acheter un joint neuf.",
-                sourceUrl: "https://instagram.com",
-                date: "15/07/2026",
-                image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=500&q=80",
-                screenshots: ["https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=600&q=80"]
-            },
-            {
-                id: 2,
-                title: "Optimiser les supports en Impression 3D (Cura)",
-                category: "impression 3d",
-                categoryLabel: "Impression 3D 🖨️",
-                summary: "Activer les supports 'arborescents' (Tree Supports) pour économiser 40% de matière et faciliter le détachement.",
-                fullDetail: "Les supports classiques en grille sont souvent difficiles à enlever et laissent des traces. En passant sur les supports en arbre (Tree) dans les options avancées de Cura, les branches viennent soutenir la pièce uniquement là où c'est nécessaire.",
-                sourceUrl: "https://facebook.com",
-                date: "12/07/2026",
-                image: "https://images.unsplash.com/photo-1615840287214-7fe58a8f3685?auto=format&fit=crop&w=500&q=80",
-                screenshots: ["https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80"]
-            },
-            {
-                id: 3,
-                title: "La règle des 2 minutes pour vaincre la procrastination",
-                category: "philosophie",
-                categoryLabel: "Bonnes Pensées 🧠",
-                summary: "Si une tâche prend moins de deux minutes à être réalisée, faites-la immédiatement sans vous poser de questions.",
-                fullDetail: "Astuce de productivité issue de la méthode GTD. Répondre à un mail court, sortir une poubelle, ranger un document... En faisant ces micro-tâches instantanément, on libère une charge mentale énorme.",
-                sourceUrl: "https://whatsapp.com",
-                date: "10/07/2026",
-                image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=500&q=80",
-                screenshots: []
-            },
-            {
-                id: 4,
-                title: "Réussir le riz cantonais parfait comme au restaurant",
-                category: "cuisine",
-                categoryLabel: "Cuisine 🍳",
-                summary: "Le secret ultime : utiliser du riz de la veille bien froid pour éviter qu'il ne colle lors de la cuisson au wok.",
-                fullDetail: "Pour avoir des grains de riz bien détachés, le riz fraîchement cuit est trop humide. Il faut utiliser un reste de riz resté au frigo toute la nuit. Faites-le sauter à feu très vif avec de l'huile de sésame.",
-                sourceUrl: "https://youtube.com",
-                date: "08/07/2026",
-                image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=500&q=80",
-                screenshots: []
-            }
-        ];
-
+        let astucesData = [];
         let currentCategory = 'tous';
 
+        // Charger les données depuis le fichier astuces.json du dépôt GitHub
+        async function loadAstuces() {
+            try {
+                // On utilise le chemin relatif car astuces.json est dans le même dossier
+                const response = await fetch('astuces.json');
+                astucesData = await response.json();
+                
+                checkAdminRoute();
+                applyFilterAndSearch();
+            } catch (error) {
+                console.error("Erreur lors du chargement des astuces :", error);
+                document.getElementById('tipsGrid').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red;">Erreur de connexion aux données. Assurez-vous d\'avoir déployé le site.</p>';
+            }
+        }
+
+        // Vérifier si l'utilisateur est sur la page secrète administrateur
+        function checkAdminRoute() {
+            if (window.location.hash === '#admin') {
+                document.getElementById('adminPanel').classList.add('active');
+                document.getElementById('pageTitle').innerText = "Mon Cerveau Numérique [ADMIN]";
+                renderAdminQueue();
+            } else {
+                document.getElementById('adminPanel').classList.remove('active');
+                document.getElementById('pageTitle').innerText = "Mon Cerveau Numérique";
+            }
+        }
+
+        // Afficher la liste des brouillons à valider
+        function renderAdminQueue() {
+            const queue = document.getElementById('adminQueue');
+            queue.innerHTML = '';
+            
+            const brouillons = astucesData.filter(tip => tip.status === 'brouillon');
+            
+            if (brouillons.length === 0) {
+                queue.innerHTML = '<p style="color: #856404; font-weight: bold;">🎉 Aucun brouillon en attente de validation !</p>';
+                return;
+            }
+
+            brouillons.forEach(tip => {
+                const adminCard = document.createElement('div');
+                adminCard.className = 'admin-card';
+                adminCard.innerHTML = `
+                    <div><strong>Titre proposé :</strong> <input type="text" class="admin-input" id="title-${tip.id}" value="${tip.title}"></div>
+                    <div><strong>Résumé court :</strong> <textarea class="admin-input" id="summary-${tip.id}">${tip.summary}</textarea></div>
+                    <div><strong>Détail complet :</strong> <textarea class="admin-input" rows="3" id="detail-${tip.id}">${tip.fullDetail}</textarea></div>
+                    <div class="admin-actions">
+                        <button class="btn-validate" onclick="validateTip(${tip.id})">✅ Valider et Publier</button>
+                        <button class="btn-reject" onclick="deleteTip(${tip.id})">❌ Supprimer</button>
+                    </div>
+                `;
+                queue.appendChild(adminCard);
+            });
+        }
+
+        // Simulation de la validation (Le vrai robot modifiera le fichier sur GitHub plus tard)
+        function validateTip(id) {
+            const tip = astucesData.find(t => t.id === id);
+            if (tip) {
+                tip.title = document.getElementById(title-${id}).value;
+                tip.summary = document.getElementById(summary-${id}).value;
+                tip.fullDetail = document.getElementById(detail-${id}).value;
+                tip.status = 'valide'; // On passe en public !
+                
+                alert(L'astuce "${tip.title}" a été validée localement ! Pour la sauvegarder définitivement sur ton vrai site, le robot devra écrire cette modification dans astuces.json.);
+                
+                renderAdminQueue();
+                applyFilterAndSearch();
+            }
+        }
+
+        function deleteTip(id) {
+            if (confirm("Supprimer définitivement ce brouillon ?")) {
+                astucesData = astucesData.filter(t => t.id !== id);
+                renderAdminQueue();
+                applyFilterAndSearch();
+            }
+        }
+
+        // Afficher les astuces publiques (status === 'valide')
         function renderGrid(data) {
             const grid = document.getElementById('tipsGrid');
             grid.innerHTML = '';
             
-            if(data.length === 0) {
-                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666;">Aucune astuce trouvée.</p>';
+            // On ne montre que les astuces validées au public
+            const publicData = data.filter(tip => tip.status === 'valide');
+
+            if(publicData.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666;">Aucune astuce publiée pour le moment.</p>';
                 return;
             }
 
-            data.forEach(tip => {
+            publicData.forEach(tip => {
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.onclick = () => openModal(tip);
                 card.innerHTML = `
-                    <div class="card-img" style="background-image: url('${tip.image}')">
-                        <span class="badge">${tip.categoryLabel.split(' ')[0]}</span>
+                    <div class="card-img" style="background-image: url('${tip.image || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80'}')">
+                        <span class="badge">${tip.categoryLabel ? tip.categoryLabel.split(' ')[0] : '💡'}</span>
                     </div>
                     <div class="card-content">
                         <h3 class="card-title">${tip.title}</h3>
                         <p class="card-desc">${tip.summary}</p>
-                        <div class="card-date">${tip.date}</div>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -380,26 +261,14 @@
         function openModal(tip) {
             const modal = document.getElementById('tipModal');
             const body = document.getElementById('modalBody');
-            let screenshotsHtml = '';
-            if (tip.screenshots && tip.screenshots.length > 0) {
-                screenshotsHtml = `
-                    <div class="modal-section">
-                        <h3>Captures d'écran</h3>
-                        <div class="screenshot-gallery">
-                            ${tip.screenshots.map(src => <img src="${src}" alt="Capture">).join('')}
-                        </div>
-                    </div>
-                `;
-            }
 
             body.innerHTML = `
-                <span class="modal-badge">${tip.categoryLabel}</span>
+                <span class="modal-badge">${tip.categoryLabel || '💡 Astuce'}</span>
                 <h2 class="modal-title">${tip.title}</h2>
-                <div class="modal-section">
-                    <h3>Résumé de l'astuce</h3>
-                    <p>${tip.fullDetail}</p>
+                <div style="margin-top: 15px;">
+                    <h3 style="color: #2a5298; border-left: 4px solid #2a5298; padding-left: 10px;">Résumé de l'astuce</h3>
+                    <p style="line-height: 1.6; color: #444;">${tip.fullDetail}</p>
                 </div>
-                ${screenshotsHtml}
                 <div style="margin-top: 30px; text-align: center;">
                     <a href="${tip.sourceUrl}" target="_blank" class="source-link">🔗 Voir la vidéo d'origine</a>
                 </div>
@@ -408,11 +277,18 @@
         }
 
         function closeModal(e) {
-            if(e.target.id === 'tipModal') modal.classList.remove('active');
+            if(e.target.id === 'tipModal') {
+                document.getElementById('tipModal').classList.remove('active');
+            }
         }
 
+        // Écouter les changements d'adresse (ex: quand on ajoute ou enlève #admin)
+        window.addEventListener('hashchange', checkAdminRoute);
+
         document.getElementById('searchInput').addEventListener('input', applyFilterAndSearch);
-        renderGrid(astucesData);
+        
+        // Lancer le chargement au démarrage
+        loadAstuces();
     </script>
 </body>
 </html>
