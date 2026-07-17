@@ -1,0 +1,35 @@
+[
+  {
+    "id": 1,
+    "title": "Réparer une fuite de siphon sans outil",
+    "category": "plomberie",
+    "categoryLabel": "Plomberie 🔧",
+    "summary": "Technique rapide utilisant du ruban d'étanchéité en téflon pour stopper un suintement sur un raccord en PVC.",
+    "fullDetail": "Cette vidéo explique comment réagir immédiatement face à une fuite sous l'évier. Si le joint est usé, enrouler 5 à 6 tours de téflon dans le sens du filetage permet de recréer l'étanchéité instantanément en attendant d'acheter un joint neuf.",
+    "sourceUrl": "https://instagram.com",
+    "image": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=500&q=80",
+    "status": "valide"
+  },
+  {
+    "id": 2,
+    "title": "Optimiser les supports en Impression 3D (Cura)",
+    "category": "impression 3d",
+    "categoryLabel": "Impression 3D 🖨️",
+    "summary": "Activer les supports 'arborescents' (Tree Supports) pour économiser 40% de matière et faciliter le détachement.",
+    "fullDetail": "Les supports classiques en grille sont souvent difficiles à enlever et laissent des traces. En passant sur les supports en arbre (Tree) dans les options avancées de Cura, les branches viennent soutenir la pièce uniquement là où c'est nécessaire.",
+    "sourceUrl": "https://facebook.com",
+    "image": "https://images.unsplash.com/photo-1615840287214-7fe58a8f3685?auto=format&fit=crop&w=500&q=80",
+    "status": "valide"
+  },
+  {
+    "id": 3,
+    "title": "Astuce Robot test WhatsApp (En attente de validation)",
+    "category": "plomberie",
+    "categoryLabel": "Plomberie 🔧",
+    "summary": "Ceci est un exemple de brouillon qui a été envoyé par ton futur robot IA.",
+    "fullDetail": "Ce texte n'apparaîtra pas sur la page publique de ton site tant que tu n'auras pas cliqué sur 'Valider' dans ton espace d'administration.",
+    "sourceUrl": "https://instagram.com",
+    "image": "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=500&q=80",
+    "status": "brouillon"
+  }
+]
