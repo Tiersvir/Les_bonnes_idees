@@ -1,330 +1,105 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Cerveau Numérique - Moteur d'Astuces</title>
-    <style>
-        *, *::before, *::after { box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0; padding: 0; background-color: #f4f7f6; color: #333;
-        }
-        header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white; padding: 40px 20px; text-align: center;
-        }
-        h1 { margin: 0; font-size: 2.2rem; }
-        p.subtitle { margin: 10px 0 25px 0; opacity: 0.9; }
-        .search-container { max-width: 600px; margin: 0 auto; }
-        .search-container input {
-            width: 100%; padding: 15px 25px; border: none;
-            border-radius: 30px; font-size: 1.1rem; outline: none;
-        }
-        .main-container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
-        .categories { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 30px; }
-        .category-btn {
-            background-color: white; border: 2px solid #2a5298; color: #2a5298;
-            padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;
-        }
-        .category-btn.active, .category-btn:hover { background-color: #2a5298; color: white; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
-        .card {
-            background: white; border-radius: 12px; overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); cursor: pointer;
-            display: flex; flex-direction: column; transition: transform 0.2s;
-        }
-        .card:hover { transform: translateY(-5px); }
-        .card-img { height: 150px; background-color: #ddd; background-size: cover; background-position: center; position: relative; }
-        .badge {
-            position: absolute; top: 12px; left: 12px; background: rgba(42, 82, 152, 0.9);
-            color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;
-        }
-        .card-content { padding: 20px; flex-grow: 1; }
-        .card-title { margin: 0 0 10px 0; font-size: 1.2rem; color: #1e3c72; }
-        .card-desc { font-size: 0.9rem; color: #666; line-height: 1.4; }
-        
-        /* Modal Popup */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000;
-            justify-content: center; align-items: center; padding: 20px;
-        }
-        .modal.active { display: flex; }
-        .modal-content {
-            background: white; width: 100%; max-width: 600px; border-radius: 16px;
-            max-height: 80vh; overflow-y: auto; padding: 30px; position: relative;
-        }
-        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 2rem; cursor: pointer; color: #aaa; }
-        .modal-badge { display: inline-block; background: #2a5298; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; margin-bottom: 15px; }
-        .modal-title { margin: 0 0 20px 0; color: #1e3c72; }
-        .source-link {
-            display: inline-block; background: #28a745; color: white; text-decoration: none;
-            padding: 12px 25px; border-radius: 25px; font-weight: bold; margin-top: 20px;
-        }
+// Fonction serverless Vercel : passerelle sécurisée entre le site et Airtable.
+// La clé API Airtable reste ici, côté serveur, jamais visible dans le navigateur.
 
-        /* Styles Admin */
-        .admin-panel {
-            display: none; background: #fff3cd; border: 2px dashed #ffc107;
-            padding: 20px; border-radius: 12px; margin-bottom: 30px;
-        }
-        .admin-panel.active { display: block; }
-        .admin-card {
-            background: white; border: 1px solid #ffeeba; padding: 15px;
-            border-radius: 8px; margin-bottom: 15px; display: flex;
-            flex-direction: column; gap: 10px;
-        }
-        .admin-actions { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-validate {
-            background: #28a745; color: white; border: none; padding: 8px 16px;
-            border-radius: 6px; cursor: pointer; font-weight: bold;
-        }
-        .btn-reject {
-            background: #dc3545; color: white; border: none; padding: 8px 16px;
-            border-radius: 6px; cursor: pointer; font-weight: bold;
-        }
-        .admin-input {
-            width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;
-        }
-    </style>
-</head>
-<body>
+const BASE_ID = 'appgjg6HgW9nDLAon';
+const TABLE_ID = 'tblFUqnOPcXPYarws';
+const AIRTABLE_URL = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
 
-    <header>
-        <h1 id="pageTitle">Mon Cerveau Numérique</h1>
-        <p class="subtitle">Toutes mes astuces du quotidien, triées et résumées par IA</p>
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Rechercher une astuce (ex: fuite, riz, soudure...)...">
-        </div>
-    </header>
+// Correspondance entre les catégories Airtable (avec accents/majuscules)
+// et les identifiants utilisés côté site (boutons de filtre, etc.)
+const CATEGORY_MAP = {
+  'Plomberie': { key: 'plomberie', label: 'Plomberie 🔧' },
+  'Électronique': { key: 'electronique', label: 'Électronique ⚡' },
+  'Informatique': { key: 'informatique', label: 'Informatique 💻' },
+  'Impression 3D': { key: 'impression 3d', label: 'Impression 3D 🖨️' },
+  'Cuisine': { key: 'cuisine', label: 'Cuisine 🍳' },
+  'Bonnes Pensées': { key: 'philosophie', label: 'Bonnes Pensées 🧠' }
+};
 
-    <div class="main-container">
-        <!-- Zone Admin Masquée par défaut -->
-        <div class="admin-panel" id="adminPanel">
-            <h2 style="color: #856404; margin-top: 0;">🔧 Espace de validation des brouillons (Admin)</h2>
-            <p>Voici les astuces envoyées par ton robot IA. Relis-les, modifie-les si besoin, puis valide-les pour les publier.</p>
-            <div id="adminQueue"><!-- Rempli par JS --></div>
-        </div>
+function mapCategory(rawLabel) {
+  if (rawLabel && CATEGORY_MAP[rawLabel]) return CATEGORY_MAP[rawLabel];
+  // Nouvelle catégorie proposée par le robot IA, pas encore dans la liste connue
+  return { key: (rawLabel || '').toLowerCase(), label: rawLabel || 'Autre' };
+}
 
-        <div class="categories" id="categoriesBar">
-            <button class="category-btn active" onclick="filterCategory('tous')">Tous</button>
-            <button class="category-btn" onclick="filterCategory('plomberie')">Plomberie 🔧</button>
-            <button class="category-btn" onclick="filterCategory('electronique')">Électronique ⚡</button>
-            <button class="category-btn" onclick="filterCategory('informatique')">Informatique 💻</button>
-            <button class="category-btn" onclick="filterCategory('impression 3d')">Impression 3D 🖨️</button>
-            <button class="category-btn" onclick="filterCategory('cuisine')">Cuisine 🍳</button>
-            <button class="category-btn" onclick="filterCategory('philosophie')">Bonnes Pensées 🧠</button>
-        </div>
+module.exports = async function handler(req, res) {
+  const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
+  if (!AIRTABLE_API_KEY) {
+    return res.status(500).json({ error: 'Clé Airtable manquante (variable AIRTABLE_API_KEY non configurée sur Vercel).' });
+  }
 
-        <div class="grid" id="tipsGrid"></div>
-    </div>
+  const headers = {
+    'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+    'Content-Type': 'application/json'
+  };
 
-    <div class="modal" id="tipModal" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close-btn" onclick="document.getElementById('tipModal').classList.remove('active')">&times;</span>
-            <div id="modalBody"></div>
-        </div>
-    </div>
-<script>
-        // Tes vraies astuces intégrées directement
-        let astucesData = [
-          {
-            "id": 1,
-            "title": "Réparer une fuite de siphon sans outil",
-            "category": "plomberie",
-            "categoryLabel": "Plomberie 🔧",
-            "summary": "Technique rapide utilisant du ruban d'étanchéité en téflon pour stopper un suintement sur un raccord en PVC.",
-            "fullDetail": "Cette vidéo explique comment réagir immédiatement face à une fuite sous l'évier. Si le joint est usé, enrouler 5 à 6 tours de téflon dans le sens du filetage permet de recréer l'étanchéité instantanément en attendant d'acheter un joint neuf.",
-            "sourceUrl": "https://instagram.com",
-            "image": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=500&q=80",
-            "status": "valide"
-          },
-          {
-            "id": 2,
-            "title": "Optimiser les supports en Impression 3D (Cura)",
-            "category": "impression 3d",
-            "categoryLabel": "Impression 3D 🖨️",
-            "summary": "Activer les supports 'arborescents' (Tree Supports) pour économiser 40% de matière et faciliter le détachement.",
-            "fullDetail": "Les supports classiques en grille sont souvent difficiles à enlever et laissent des traces. En passant sur les supports en arbre (Tree) dans les options avancées de Cura, les branches viennent soutenir la pièce uniquement là où c'est nécessaire.",
-            "sourceUrl": "https://facebook.com",
-            "image": "https://images.unsplash.com/photo-1615840287214-7fe58a8f3685?auto=format&fit=crop&w=500&q=80",
-            "status": "valide"
-          },
-          {
-            "id": 3,
-            "title": "Astuce Robot test WhatsApp (En attente de validation)",
-            "category": "plomberie",
-            "categoryLabel": "Plomberie 🔧",
-            "summary": "Ceci est un exemple de brouillon qui a été envoyé par ton futur robot IA.",
-            "fullDetail": "Ce texte n'apparaîtra pas sur la page publique de ton site tant que tu n'auras pas cliqué sur 'Valider' dans ton espace d'administration.",
-            "sourceUrl": "https://instagram.com",
-            "image": "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=500&q=80",
-            "status": "brouillon"
-          }
-        ];
-        
-        let currentCategory = 'tous';
+  try {
+    // --- LISTER TOUTES LES ASTUCES ---
+    if (req.method === 'GET') {
+      let records = [];
+      let offset;
+      do {
+        const url = offset ? `${AIRTABLE_URL}?pageSize=100&offset=${offset}` : `${AIRTABLE_URL}?pageSize=100`;
+        const r = await fetch(url, { headers });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error?.message || 'Erreur Airtable (lecture)');
+        records = records.concat(data.records);
+        offset = data.offset;
+      } while (offset);
 
-        async function loadAstuces() {
-            try {
-                const response = await fetch('astuces.json');
-                if (response.ok) {
-                    astucesData = await response.json();
-                }
-            } catch (error) {
-                console.log("Mode autonome activé (utilisation des astuces intégrées).");
-            } finally {
-                checkAdminRoute();
-                applyFilterAndSearch();
-            }
-        }
+      const astuces = records.map(rec => {
+        const cat = mapCategory(rec.fields['Catégorie']);
+        return {
+          id: rec.id,
+          title: rec.fields['Titre'] || '',
+          category: cat.key,
+          categoryLabel: cat.label,
+          summary: rec.fields['Résumé'] || '',
+          fullDetail: rec.fields['Détail complet'] || '',
+          sourceUrl: rec.fields['Source URL'] || '',
+          image: (rec.fields['Images'] && rec.fields['Images'][0]) ? rec.fields['Images'][0].url : '',
+          status: rec.fields['Statut'] === 'Validé' ? 'valide' : 'brouillon'
+        };
+      });
 
-        function checkAdminRoute() {
-            const adminPanel = document.getElementById('adminPanel');
-            const pageTitle = document.getElementById('pageTitle');
-            
-            if (window.location.hash === '#admin') {
-                if (adminPanel) adminPanel.classList.add('active');
-                if (pageTitle) pageTitle.innerText = "Mon Cerveau Numérique [ADMIN]";
-                renderAdminQueue();
-            } else {
-                if (adminPanel) adminPanel.classList.remove('active');
-                if (pageTitle) pageTitle.innerText = "Mon Cerveau Numérique";
-            }
-        }
+      return res.status(200).json(astuces);
+    }
 
-        function renderAdminQueue() {
-            const queue = document.getElementById('adminQueue');
-            if (!queue) return;
-            queue.innerHTML = '';
-            
-            const brouillons = astucesData.filter(tip => tip.status === 'brouillon');
-            
-            if (brouillons.length === 0) {
-                queue.innerHTML = '<p style="color: #856404; font-weight: bold;">🎉 Aucun brouillon en attente de validation !</p>';
-                return;
-            }
+    // --- MODIFIER / VALIDER UNE ASTUCE ---
+    if (req.method === 'PATCH') {
+      const id = req.query.id;
+      if (!id) return res.status(400).json({ error: 'id manquant' });
 
-            brouillons.forEach(tip => {
-                const adminCard = document.createElement('div');
-                adminCard.className = 'admin-card';
-                adminCard.innerHTML = `
-                    <div><strong>Titre proposé :</strong> <input type="text" class="admin-input" id="title-${tip.id}" value="${tip.title}"></div>
-                    <div><strong>Résumé court :</strong> <textarea class="admin-input" id="summary-${tip.id}">${tip.summary}</textarea></div>
-                    <div><strong>Détail complet :</strong> <textarea class="admin-input" rows="3" id="detail-${tip.id}">${tip.fullDetail}</textarea></div>
-                    <div class="admin-actions">
-                        <button class="btn-validate" onclick="validateTip(${tip.id})">✅ Valider et Publier</button>
-                        <button class="btn-reject" onclick="deleteTip(${tip.id})">❌ Supprimer</button>
-                    </div>
-                `;
-                queue.appendChild(adminCard);
-            });
-        }
+      const body = req.body || {};
+      const fields = {};
+      if (body.title !== undefined) fields['Titre'] = body.title;
+      if (body.summary !== undefined) fields['Résumé'] = body.summary;
+      if (body.fullDetail !== undefined) fields['Détail complet'] = body.fullDetail;
+      if (body.status !== undefined) fields['Statut'] = body.status === 'valide' ? 'Validé' : 'Brouillon';
 
-        function validateTip(id) {
-            const tip = astucesData.find(t => t.id === id);
-            if (tip) {
-                tip.title = document.getElementById(`title-${id}`).value;
-                tip.summary = document.getElementById(`summary-${id}`).value;
-                tip.fullDetail = document.getElementById(`detail-${id}`).value;
-                tip.status = 'valide';
-                alert(`L'astuce "${tip.title}" a été validée !`);
-                renderAdminQueue();
-                applyFilterAndSearch();
-            }
-        }
+      const r = await fetch(`${AIRTABLE_URL}/${id}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ fields })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error?.message || 'Erreur Airtable (écriture)');
+      return res.status(200).json({ success: true });
+    }
 
-        function deleteTip(id) {
-            if (confirm("Supprimer définitivement ce brouillon ?")) {
-                astucesData = astucesData.filter(t => t.id !== id);
-                renderAdminQueue();
-                applyFilterAndSearch();
-            }
-        }
+    // --- SUPPRIMER UN BROUILLON REFUSÉ ---
+    if (req.method === 'DELETE') {
+      const id = req.query.id;
+      if (!id) return res.status(400).json({ error: 'id manquant' });
 
-        function renderGrid(data) {
-            const grid = document.getElementById('tipsGrid');
-            if (!grid) return;
-            grid.innerHTML = '';
-            const publicData = data.filter(tip => tip.status === 'valide');
+      const r = await fetch(`${AIRTABLE_URL}/${id}`, { method: 'DELETE', headers });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error?.message || 'Erreur Airtable (suppression)');
+      return res.status(200).json({ success: true });
+    }
 
-            if(publicData.length === 0) {
-                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666;">Aucune astuce publiée pour le moment.</p>';
-                return;
-            }
-
-            publicData.forEach(tip => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.onclick = () => openModal(tip);
-                card.innerHTML = `
-                    <div class="card-img" style="background-image: url('${tip.image || ''}')">
-                        <span class="badge">${tip.categoryLabel ? tip.categoryLabel.split(' ')[0] : '💡'}</span>
-                    </div>
-                    <div class="card-content">
-                        <h3 class="card-title">${tip.title}</h3>
-                        <p class="card-desc">${tip.summary}</p>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        function filterCategory(cat, e) {
-            currentCategory = cat;
-            const buttons = document.querySelectorAll('.category-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            
-            if (e && e.currentTarget) {
-                e.currentTarget.classList.add('active');
-            } else if (e && e.target) {
-                e.target.classList.add('active');
-            }
-            applyFilterAndSearch();
-        }
-
-        function applyFilterAndSearch() {
-            const searchInput = document.getElementById('searchInput');
-            const searchText = searchInput ? searchInput.value.toLowerCase() : '';
-            
-            const filtered = astucesData.filter(tip => {
-                const matchesCategory = (currentCategory === 'tous' || tip.category === currentCategory);
-                const matchesSearch = tip.title.toLowerCase().includes(searchText) || 
-                                      tip.summary.toLowerCase().includes(searchText);
-                return matchesCategory && matchesSearch;
-            });
-            renderGrid(filtered);
-        }
-
-        function openModal(tip) {
-            const modal = document.getElementById('tipModal');
-            const body = document.getElementById('modalBody');
-            if (!modal || !body) return;
-            
-            body.innerHTML = `
-                <span class="modal-badge">${tip.categoryLabel || '💡 Astuce'}</span>
-                <h2 class="modal-title">${tip.title}</h2>
-                <div style="margin-top: 15px;">
-                    <h3 style="color: #2a5298; border-left: 4px solid #2a5298; padding-left: 10px;">Détails de l'astuce</h3>
-                    <p style="line-height: 1.6; color: #444; white-space: pre-line;">${tip.fullDetail}</p>
-                </div>
-                <div style="margin-top: 30px; text-align: center;">
-                    <a href="${tip.sourceUrl}" target="_blank" class="source-link">🔗 Voir la source</a>
-                </div>
-            `;
-            modal.classList.add('active');
-        }
-
-        window.addEventListener('hashchange', checkAdminRoute);
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.addEventListener('input', applyFilterAndSearch);
-            }
-            loadAstuces();
-        });
-    </script>
- 
-</body>
-</html>
+    return res.status(405).json({ error: 'Méthode non autorisée' });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
