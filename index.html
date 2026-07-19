@@ -166,6 +166,7 @@
         let currentCategory = 'tous';
 
         async function loadAstuces() {
+            alert ("le nouveau scrit se lance!")
             try {
                 const response = await fetch('astuces.json');
                 if (response.ok) {
