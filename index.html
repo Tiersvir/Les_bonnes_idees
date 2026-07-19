@@ -224,11 +224,11 @@
         function validateTip(id) {
             const tip = astucesData.find(t => t.id === id);
             if (tip) {
-                tip.title = document.getElementById(title-${id}).value;
-                tip.summary = document.getElementById(summary-${id}).value;
-                tip.fullDetail = document.getElementById(detail-${id}).value;
+                tip.title = document.getElementById(`title-${id}`).value;
+                tip.summary = document.getElementById(`summary-${id}`).value;
+                tip.fullDetail = document.getElementById(`detail-${id}`).value;
                 tip.status = 'valide';
-                alert(L'astuce "${tip.title}" a été validée !);
+                alert(`L'astuce "${tip.title}" a été validée !`);
                 renderAdminQueue();
                 applyFilterAndSearch();
             }
