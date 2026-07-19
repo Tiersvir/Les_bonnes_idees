@@ -167,7 +167,6 @@
 
         async function loadAstuces() {
             try {
-                // Le script tente quand même de charger le fichier externe s'il existe
                 const response = await fetch('astuces.json');
                 if (response.ok) {
                     astucesData = await response.json();
@@ -175,26 +174,30 @@
             } catch (error) {
                 console.log("Mode autonome activé (utilisation des astuces intégrées).");
             } finally {
-                // On lance le site QUOI QU'IL ARRIVE
                 checkAdminRoute();
                 applyFilterAndSearch();
             }
         }
 
         function checkAdminRoute() {
+            const adminPanel = document.getElementById('adminPanel');
+            const pageTitle = document.getElementById('pageTitle');
+            
             if (window.location.hash === '#admin') {
-                document.getElementById('adminPanel').classList.add('active');
-                document.getElementById('pageTitle').innerText = "Mon Cerveau Numérique [ADMIN]";
+                if (adminPanel) adminPanel.classList.add('active');
+                if (pageTitle) pageTitle.innerText = "Mon Cerveau Numérique [ADMIN]";
                 renderAdminQueue();
             } else {
-                document.getElementById('adminPanel').classList.remove('active');
-                document.getElementById('pageTitle').innerText = "Mon Cerveau Numérique";
+                if (adminPanel) adminPanel.classList.remove('active');
+                if (pageTitle) pageTitle.innerText = "Mon Cerveau Numérique";
             }
         }
 
         function renderAdminQueue() {
             const queue = document.getElementById('adminQueue');
+            if (!queue) return;
             queue.innerHTML = '';
+            
             const brouillons = astucesData.filter(tip => tip.status === 'brouillon');
             
             if (brouillons.length === 0) {
@@ -241,6 +244,7 @@
 
         function renderGrid(data) {
             const grid = document.getElementById('tipsGrid');
+            if (!grid) return;
             grid.innerHTML = '';
             const publicData = data.filter(tip => tip.status === 'valide');
 
@@ -266,11 +270,18 @@
             });
         }
 
-        function filterCategory(cat) {
+        // Correction ici : on passe explicitement l'événement (e) à la fonction
+        function filterCategory(cat, e) {
             currentCategory = cat;
             const buttons = document.querySelectorAll('.category-btn');
             buttons.forEach(btn => btn.classList.remove('active'));
-            if (event && event.target) event.target.classList.add('active');
+            
+            // Correction de la détection du bouton cliqué
+            if (e && e.currentTarget) {
+                e.currentTarget.classList.add('active');
+            } else if (e && e.target) {
+                e.target.classList.add('active');
+            }
             applyFilterAndSearch();
         }
 
@@ -290,6 +301,8 @@
         function openModal(tip) {
             const modal = document.getElementById('tipModal');
             const body = document.getElementById('modalBody');
+            if (!modal || !body) return;
+            
             body.innerHTML = `
                 <span class="modal-badge">${tip.categoryLabel || '💡 Astuce'}</span>
                 <h2 class="modal-title">${tip.title}</h2>
@@ -304,16 +317,19 @@
             modal.classList.add('active');
         }
 
+        // Gestion propre du cycle de vie de la page
         window.addEventListener('hashchange', checkAdminRoute);
         
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('input', applyFilterAndSearch);
-        }
-        
-        document.addEventListener('DOMContentLoaded', loadAstuces);
+        document.addEventListener('DOMContentLoaded', () => {
+            // Configuration de la recherche une fois que le HTML est prêt
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', applyFilterAndSearch);
+            }
+            // Lancement du chargement des données
+            loadAstuces();
+        });
     </script>
-  
  
 </body>
 </html>
