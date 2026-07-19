@@ -126,7 +126,7 @@
         </div>
     </div>
 <script>
-        // Tes vraies astuces sont maintenant intégrées directement pour éviter tout blocage !
+        // Tes vraies astuces intégrées directement
         let astucesData = [
           {
             "id": 1,
@@ -166,7 +166,6 @@
         let currentCategory = 'tous';
 
         async function loadAstuces() {
-            alert ("le nouveau scrit se lance!")
             try {
                 const response = await fetch('astuces.json');
                 if (response.ok) {
@@ -271,13 +270,11 @@
             });
         }
 
-        // Correction ici : on passe explicitement l'événement (e) à la fonction
         function filterCategory(cat, e) {
             currentCategory = cat;
             const buttons = document.querySelectorAll('.category-btn');
             buttons.forEach(btn => btn.classList.remove('active'));
             
-            // Correction de la détection du bouton cliqué
             if (e && e.currentTarget) {
                 e.currentTarget.classList.add('active');
             } else if (e && e.target) {
@@ -318,16 +315,13 @@
             modal.classList.add('active');
         }
 
-        // Gestion propre du cycle de vie de la page
         window.addEventListener('hashchange', checkAdminRoute);
         
-        document.addEventListener('DOMContentLoaded', () => {
-            // Configuration de la recherche une fois que le HTML est prêt
+        document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 searchInput.addEventListener('input', applyFilterAndSearch);
             }
-            // Lancement du chargement des données
             loadAstuces();
         });
     </script>
