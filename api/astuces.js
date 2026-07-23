@@ -16,6 +16,9 @@ const CATEGORY_MAP = {
   'Bonnes Pensées': { key: 'philosophie', label: 'Bonnes Pensées 🧠' }
 };
 
+// Catégories Airtable valides (utilisées pour vérifier ce qu'envoie le robot IA)
+const VALID_CATEGORIES = Object.keys(CATEGORY_MAP);
+
 function mapCategory(rawLabel) {
   if (rawLabel && CATEGORY_MAP[rawLabel]) return CATEGORY_MAP[rawLabel];
   // Nouvelle catégorie proposée par le robot IA, pas encore dans la liste connue
@@ -65,6 +68,42 @@ module.exports = async function handler(req, res) {
       return res.status(200).json(astuces);
     }
 
+    // --- CRÉER UN NOUVEAU BROUILLON (utilisé par le webhook WhatsApp) ---
+    if (req.method === 'POST') {
+      const body = req.body || {};
+
+      if (!body.title || !body.sourceUrl) {
+        return res.status(400).json({ error: 'title et sourceUrl sont obligatoires' });
+      }
+
+      // Si la catégorie envoyée par l'IA ne correspond à aucune catégorie Airtable connue,
+      // on retombe sur "Bonnes Pensées" pour éviter une erreur Airtable (champ select strict).
+      const category = VALID_CATEGORIES.includes(body.category) ? body.category : 'Bonnes Pensées';
+
+      const fields = {
+        'Titre': body.title,
+        'Catégorie': category,
+        'Résumé': body.summary || '',
+        'Détail complet': body.fullDetail || '',
+        'Source URL': body.sourceUrl,
+        'Statut': 'Brouillon'
+      };
+
+      if (body.imageUrl) {
+        fields['Images'] = [{ url: body.imageUrl }];
+      }
+
+      const r = await fetch(AIRTABLE_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ fields })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error?.message || 'Erreur Airtable (création)');
+
+      return res.status(200).json({ success: true, id: data.id });
+    }
+
     // --- MODIFIER / VALIDER UNE ASTUCE ---
     if (req.method === 'PATCH') {
       const id = req.query.id;
@@ -84,6 +123,7 @@ module.exports = async function handler(req, res) {
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error?.message || 'Erreur Airtable (écriture)');
+
       return res.status(200).json({ success: true });
     }
 
@@ -95,6 +135,7 @@ module.exports = async function handler(req, res) {
       const r = await fetch(`${AIRTABLE_URL}/${id}`, { method: 'DELETE', headers });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error?.message || 'Erreur Airtable (suppression)');
+
       return res.status(200).json({ success: true });
     }
 
