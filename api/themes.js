@@ -75,7 +75,10 @@ module.exports = async function handler(req, res) {
             type: rec.fields['Type'] || 'Texte',
             texte: rec.fields['Texte'] || '',
             image: (rec.fields['Image'] && rec.fields['Image'][0]) ? rec.fields['Image'][0].url : '',
-            ordre: rec.fields['Ordre'] || 0
+            ordre: rec.fields['Ordre'] || 0,
+            posX: rec.fields['PosX'] !== undefined ? rec.fields['PosX'] : 10,
+            posY: rec.fields['PosY'] !== undefined ? rec.fields['PosY'] : 10,
+            largeur: rec.fields['Largeur'] !== undefined ? rec.fields['Largeur'] : 40
           });
         });
       });
@@ -96,6 +99,8 @@ module.exports = async function handler(req, res) {
         if (!themeId || !type) return res.status(400).json({ error: 'themeId et type requis' });
 
         const ordre = Date.now();
+        const posX = 8 + Math.round(Math.random() * 25);
+        const posY = 8 + Math.round(Math.random() * 25);
         const r = await fetch(BLOCS_URL, {
           method: 'POST',
           headers,
@@ -105,13 +110,16 @@ module.exports = async function handler(req, res) {
               'Thème': [themeId],
               'Type': type,
               'Texte': texte || '',
-              'Ordre': ordre
+              'Ordre': ordre,
+              'PosX': posX,
+              'PosY': posY,
+              'Largeur': type === 'Image' ? 40 : 35
             }
           })
         });
         const data = await r.json();
         if (!r.ok) throw new Error(data.error?.message || 'Erreur Airtable (création bloc)');
-        return res.status(200).json({ success: true, id: data.id, ordre });
+        return res.status(200).json({ success: true, id: data.id, ordre, posX, posY });
       }
 
       if (body.action === 'uploadBlockImage' || body.action === 'uploadBackground') {
@@ -156,6 +164,9 @@ module.exports = async function handler(req, res) {
       const fields = {};
       if (body.texte !== undefined) fields['Texte'] = body.texte;
       if (body.ordre !== undefined) fields['Ordre'] = body.ordre;
+      if (body.posX !== undefined) fields['PosX'] = body.posX;
+      if (body.posY !== undefined) fields['PosY'] = body.posY;
+      if (body.largeur !== undefined) fields['Largeur'] = body.largeur;
 
       const r = await fetch(`${BLOCS_URL}/${blockId}`, {
         method: 'PATCH',
