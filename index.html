@@ -48,12 +48,16 @@
         .theme-cover {
             display: none; border-radius: 16px; margin-bottom: 30px; overflow: hidden;
             background-color: #e9ecef; background-size: cover; background-position: center;
+            position: relative; min-height: 420px;
         }
         .theme-cover.active { display: block; }
-        .theme-cover-inner { background: rgba(255,255,255,0.88); padding: 30px; }
-        .theme-block-text { line-height: 1.7; color: #333; white-space: pre-line; margin-bottom: 18px; font-size: 1.02rem; }
-        .theme-block-text:last-child { margin-bottom: 0; }
-        .theme-block-image { width: 100%; max-height: 380px; object-fit: cover; border-radius: 12px; margin-bottom: 18px; }
+        .theme-cover-inner { position: relative; width: 100%; min-height: 420px; }
+        .theme-block-text {
+            position: absolute; line-height: 1.6; color: #333; white-space: pre-line; font-size: 1rem;
+            background: rgba(255,255,255,0.92); padding: 14px 18px; border-radius: 10px; box-sizing: border-box;
+        }
+        .theme-block-image { position: absolute; border-radius: 10px; box-sizing: border-box; display: block; }
+        .theme-block-image img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block; }
 
         /* Éditeur de thèmes (admin) */
         .theme-editor { background: #fff9e6; border: 1px solid #ffe08a; border-radius: 12px; padding: 20px; margin-top: 25px; }
@@ -65,18 +69,37 @@
         .theme-block-card { background: white; border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 12px; }
         .theme-block-card textarea { width: 100%; min-height: 70px; padding: 8px; border-radius: 6px; border: 1px solid #ddd; font-family: inherit; box-sizing: border-box; }
         .theme-block-card img { max-width: 100%; max-height: 160px; border-radius: 6px; display: block; margin-bottom: 8px; }
-        .theme-block-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .theme-block-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
         .theme-block-actions button {
             border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
         }
-        .btn-up-down { background: #e2e6ea; color: #333; }
         .btn-save-block { background: #2a5298; color: white; }
         .btn-delete-block { background: #dc3545; color: white; }
         .add-block-buttons { margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
         .add-block-buttons button { background: #28a745; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
         .add-block-buttons label { background: #17a2b8; color: white; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-        .astuce-page { display: none; max-width: 800px; margin: 0 auto; }
-        .astuce-page.active { display: block; }
+
+        /* Canevas de positionnement libre (glisser-déposer) */
+        .theme-canvas-hint { font-size: 0.85rem; color: #666; margin: 10px 0; }
+        .theme-canvas {
+            position: relative; width: 100%; height: 420px; border-radius: 10px;
+            background-size: cover; background-position: center; background-color: #ddd;
+            border: 2px dashed #ccc; overflow: hidden; touch-action: none;
+        }
+        .canvas-block {
+            position: absolute; cursor: grab; border: 2px solid transparent; border-radius: 8px;
+            box-sizing: border-box; user-select: none;
+        }
+        .canvas-block:hover { border-color: #2a5298; }
+        .canvas-block.dragging { cursor: grabbing; border-color: #2a5298; opacity: 0.85; z-index: 50; }
+        .canvas-text-preview {
+            background: rgba(255,255,255,0.92); padding: 8px 12px; border-radius: 8px;
+            font-size: 0.85rem; color: #333; max-height: 100px; overflow: hidden;
+        }
+        .canvas-block img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; display: block; }
+        .canvas-placeholder { background: rgba(255,255,255,0.92); padding: 20px; text-align: center; border-radius: 8px; color: #999; }
+        .astuce-page { display: none; max-width: 800px; margin: 0 auto; background-size: cover; background-position: center; border-radius: 16px; }
+        .astuce-page.active { display: block; padding: 20px; }
         .back-btn {
             display: inline-flex; align-items: center; gap: 6px; background: none; border: none;
             color: #2a5298; font-weight: 600; font-size: 1rem; cursor: pointer; margin-bottom: 20px; padding: 8px 0;
@@ -268,6 +291,7 @@
             } finally {
                 renderThemeCover(currentCategory);
                 if (window.location.hash === '#admin') renderAdminThemeEditor();
+                if (window.location.hash.startsWith('#astuce-')) handleRoute();
             }
         }
 
@@ -383,11 +407,15 @@
 
             cover.style.backgroundImage = theme.background ? `url('${theme.background}')` : '';
             inner.innerHTML = (theme.blocks || []).map(block => {
+                const left = (block.posX !== undefined ? block.posX : 10);
+                const top = (block.posY !== undefined ? block.posY : 10);
+                const width = (block.largeur !== undefined ? block.largeur : 40);
+                const style = `left:${left}%; top:${top}%; width:${width}%;`;
                 if (block.type === 'Image' && block.image) {
-                    return `<img class="theme-block-image" src="${block.image}" alt="">`;
+                    return `<div class="theme-block-image" style="${style} height:${width * 0.6}%;"><img src="${block.image}" alt=""></div>`;
                 }
                 if (block.type === 'Texte' && block.texte) {
-                    return `<div class="theme-block-text">${block.texte}</div>`;
+                    return `<div class="theme-block-text" style="${style}">${block.texte}</div>`;
                 }
                 return '';
             }).join('');
@@ -405,12 +433,18 @@
                     <p>Astuce introuvable.</p>
                 `;
                 astucePage.classList.add('active');
+                astucePage.style.backgroundImage = '';
                 return;
             }
 
+            const theme = themesData[tip.category];
+            const themeBg = theme && theme.background ? theme.background : '';
+
+            astucePage.style.backgroundImage = themeBg ? `url('${themeBg}')` : '';
+
             astucePage.innerHTML = `
                 <button class="back-btn" onclick="goBack()">← Retour à toutes les astuces</button>
-                <div class="astuce-hero" style="background-image: url('${tip.image || ''}')">
+                <div class="astuce-hero" style="background-image: url('${tip.image || themeBg || ''}')">
                     <span class="badge">${tip.categoryLabel || '💡 Astuce'}</span>
                 </div>
                 <div class="astuce-header">
@@ -495,7 +529,18 @@
                 return;
             }
 
-            let blocksHtml = (theme.blocks || []).map((block, index) => {
+            const canvasBlocksHtml = (theme.blocks || []).map(block => {
+                const left = (block.posX !== undefined ? block.posX : 10);
+                const top = (block.posY !== undefined ? block.posY : 10);
+                const width = (block.largeur !== undefined ? block.largeur : 40);
+                const style = `left:${left}%; top:${top}%; width:${width}%; height:${block.type === 'Image' ? (width * 0.6) + '%' : 'auto'};`;
+                const inner = block.type === 'Image'
+                    ? (block.image ? `<img src="${block.image}" alt="">` : '<div class="canvas-placeholder">🖼️ image</div>')
+                    : `<div class="canvas-text-preview">${(block.texte || 'texte vide').slice(0, 80)}</div>`;
+                return `<div class="canvas-block" data-id="${block.id}" style="${style}">${inner}</div>`;
+            }).join('');
+
+            const editPanelsHtml = (theme.blocks || []).map(block => {
                 if (block.type === 'Image') {
                     return `
                         <div class="theme-block-card">
@@ -503,8 +548,12 @@
                             ${block.image ? `<img src="${block.image}">` : '<p style="color:#999;">Aucune image envoyée.</p>'}
                             <input type="file" accept="image/*" onchange="uploadExistingBlockImage('${block.id}', this.files[0])">
                             <div class="theme-block-actions">
-                                <button class="btn-up-down" onclick="moveBlock('${key}', '${block.id}', -1)">⬆️ Monter</button>
-                                <button class="btn-up-down" onclick="moveBlock('${key}', '${block.id}', 1)">⬇️ Descendre</button>
+                                <label>Largeur :
+                                    <input type="range" min="15" max="100" value="${block.largeur !== undefined ? block.largeur : 40}"
+                                        oninput="this.nextElementSibling.textContent = this.value + '%'"
+                                        onchange="updateBlockSize('${block.id}', this.value)">
+                                </label>
+                                <span>${block.largeur !== undefined ? block.largeur : 40}%</span>
                                 <button class="btn-delete-block" onclick="deleteBlock('${block.id}')">❌ Supprimer</button>
                             </div>
                         </div>
@@ -515,9 +564,13 @@
                         <strong>📝 Bloc texte</strong>
                         <textarea id="blockText-${block.id}">${block.texte || ''}</textarea>
                         <div class="theme-block-actions">
-                            <button class="btn-save-block" onclick="saveBlockText('${block.id}')">💾 Enregistrer</button>
-                            <button class="btn-up-down" onclick="moveBlock('${key}', '${block.id}', -1)">⬆️ Monter</button>
-                            <button class="btn-up-down" onclick="moveBlock('${key}', '${block.id}', 1)">⬇️ Descendre</button>
+                            <button class="btn-save-block" onclick="saveBlockText('${block.id}')">💾 Enregistrer le texte</button>
+                            <label>Largeur :
+                                <input type="range" min="15" max="100" value="${block.largeur !== undefined ? block.largeur : 35}"
+                                    oninput="this.nextElementSibling.textContent = this.value + '%'"
+                                    onchange="updateBlockSize('${block.id}', this.value)">
+                            </label>
+                            <span>${block.largeur !== undefined ? block.largeur : 35}%</span>
                             <button class="btn-delete-block" onclick="deleteBlock('${block.id}')">❌ Supprimer</button>
                         </div>
                     </div>
@@ -526,12 +579,18 @@
 
             body.innerHTML = `
                 <div class="theme-editor-bg-preview" style="${theme.background ? `background-image:url('${theme.background}')` : ''}">
-                    ${theme.background ? '' : 'Aucun fond d\'écran pour le moment'}
+                    ${theme.background ? '' : "Aucun fond d'écran pour le moment"}
                 </div>
                 <input type="file" accept="image/*" onchange="uploadThemeBackground('${theme.id}', this.files[0])">
 
-                <h4 style="margin-top: 25px;">Blocs de la page</h4>
-                ${blocksHtml || '<p style="color:#999;">Aucun bloc pour le moment.</p>'}
+                <h4 style="margin-top: 25px;">Emplacement des éléments</h4>
+                <p class="theme-canvas-hint">Fais glisser chaque élément à l'endroit voulu sur l'aperçu ci-dessous (le fond d'écran y est visible pour t'aider à te repérer).</p>
+                <div class="theme-canvas" id="themeCanvas" style="${theme.background ? `background-image:url('${theme.background}')` : ''}">
+                    ${canvasBlocksHtml}
+                </div>
+
+                <h4 style="margin-top: 25px;">Contenu des blocs</h4>
+                ${editPanelsHtml || '<p style="color:#999;">Aucun bloc pour le moment.</p>'}
 
                 <div class="add-block-buttons">
                     <button onclick="addTextBlock('${theme.id}', '${key}')">➕ Ajouter un bloc texte</button>
@@ -540,6 +599,79 @@
                     </label>
                 </div>
             `;
+
+            setupCanvasDragging(key);
+        }
+
+        function setupCanvasDragging(themeKey) {
+            const canvas = document.getElementById('themeCanvas');
+            if (!canvas) return;
+
+            let dragEl = null;
+            let startClientX = 0, startClientY = 0, startLeftPct = 0, startTopPct = 0;
+
+            canvas.querySelectorAll('.canvas-block').forEach(el => {
+                el.addEventListener('pointerdown', (e) => {
+                    dragEl = el;
+                    el.classList.add('dragging');
+                    el.setPointerCapture(e.pointerId);
+                    startClientX = e.clientX;
+                    startClientY = e.clientY;
+                    startLeftPct = parseFloat(el.style.left) || 0;
+                    startTopPct = parseFloat(el.style.top) || 0;
+                    e.preventDefault();
+                });
+            });
+
+            canvas.addEventListener('pointermove', (e) => {
+                if (!dragEl) return;
+                const rect = canvas.getBoundingClientRect();
+                const dxPct = ((e.clientX - startClientX) / rect.width) * 100;
+                const dyPct = ((e.clientY - startClientY) / rect.height) * 100;
+                const newLeft = Math.min(95, Math.max(0, startLeftPct + dxPct));
+                const newTop = Math.min(95, Math.max(0, startTopPct + dyPct));
+                dragEl.style.left = newLeft + '%';
+                dragEl.style.top = newTop + '%';
+            });
+
+            canvas.addEventListener('pointerup', async (e) => {
+                if (!dragEl) return;
+                const el = dragEl;
+                dragEl = null;
+                el.classList.remove('dragging');
+
+                const blockId = el.dataset.id;
+                const posX = Math.round(parseFloat(el.style.left) * 10) / 10;
+                const posY = Math.round(parseFloat(el.style.top) * 10) / 10;
+
+                try {
+                    const response = await fetch(`/api/themes?blockId=${encodeURIComponent(blockId)}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ posX, posY })
+                    });
+                    if (!response.ok) throw new Error(await parseErrorResponse(response));
+                    await loadThemes();
+                } catch (error) {
+                    alert(`Erreur lors du déplacement : ${error.message}`);
+                    renderAdminThemeEditor();
+                }
+            });
+        }
+
+        async function updateBlockSize(blockId, value) {
+            try {
+                const response = await fetch(`/api/themes?blockId=${encodeURIComponent(blockId)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ largeur: parseFloat(value) })
+                });
+                if (!response.ok) throw new Error(await parseErrorResponse(response));
+                await loadThemes();
+                renderAdminThemeEditor();
+            } catch (error) {
+                alert(`Erreur lors du redimensionnement : ${error.message}`);
+            }
         }
 
         async function uploadThemeBackground(themeId, file) {
@@ -646,35 +778,6 @@
                 renderAdminThemeEditor();
             } catch (error) {
                 alert(`Erreur lors de la suppression : ${error.message}`);
-            }
-        }
-
-        async function moveBlock(key, blockId, direction) {
-            const theme = themesData[key];
-            if (!theme) return;
-            const blocks = theme.blocks || [];
-            const index = blocks.findIndex(b => b.id === blockId);
-            const targetIndex = index + direction;
-            if (index === -1 || targetIndex < 0 || targetIndex >= blocks.length) return;
-
-            const blockA = blocks[index];
-            const blockB = blocks[targetIndex];
-
-            try {
-                await Promise.all([
-                    fetch(`/api/themes?blockId=${encodeURIComponent(blockA.id)}`, {
-                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ordre: blockB.ordre })
-                    }),
-                    fetch(`/api/themes?blockId=${encodeURIComponent(blockB.id)}`, {
-                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ordre: blockA.ordre })
-                    })
-                ]);
-                await loadThemes();
-                renderAdminThemeEditor();
-            } catch (error) {
-                alert(`Erreur lors du déplacement : ${error.message}`);
             }
         }
 
