@@ -44,20 +44,23 @@
         .card-title { margin: 0 0 10px 0; font-size: 1.2rem; color: #1e3c72; }
         .card-desc { font-size: 0.9rem; color: #666; line-height: 1.4; }
         
-        /* Modal Popup */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000;
-            justify-content: center; align-items: center; padding: 20px;
+        /* Page dédiée à une astuce */
+        .astuce-page { display: none; max-width: 800px; margin: 0 auto; }
+        .astuce-page.active { display: block; }
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 6px; background: none; border: none;
+            color: #2a5298; font-weight: 600; font-size: 1rem; cursor: pointer; margin-bottom: 20px; padding: 8px 0;
         }
-        .modal.active { display: flex; }
-        .modal-content {
-            background: white; width: 100%; max-width: 600px; border-radius: 16px;
-            max-height: 80vh; overflow-y: auto; padding: 30px; position: relative;
+        .back-btn:hover { text-decoration: underline; }
+        .astuce-hero {
+            width: 100%; height: 320px; border-radius: 16px; background-size: cover;
+            background-position: center; background-color: #ddd; margin-bottom: 25px; position: relative; overflow: hidden;
         }
-        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 2rem; cursor: pointer; color: #aaa; }
-        .modal-badge { display: inline-block; background: #2a5298; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; margin-bottom: 15px; }
-        .modal-title { margin: 0 0 20px 0; color: #1e3c72; }
+        .astuce-hero .badge { top: 20px; left: 20px; font-size: 0.9rem; padding: 6px 14px; }
+        .astuce-header { background: white; border-radius: 16px; padding: 35px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .astuce-header h1 { color: #1e3c72; margin: 0 0 20px 0; font-size: 2rem; line-height: 1.3; }
+        .astuce-body { line-height: 1.8; color: #444; font-size: 1.05rem; white-space: pre-line; }
+        .astuce-footer { margin-top: 35px; text-align: center; }
         .source-link {
             display: inline-block; background: #28a745; color: white; text-decoration: none;
             padding: 12px 25px; border-radius: 25px; font-weight: bold; margin-top: 20px;
@@ -93,7 +96,7 @@
     <header>
         <h1 id="pageTitle">Mon Cerveau Numérique</h1>
         <p class="subtitle">Toutes mes astuces du quotidien, triées et résumées par IA</p>
-        <div class="search-container">
+        <div class="search-container" id="searchContainer">
             <input type="text" id="searchInput" placeholder="Rechercher une astuce (ex: fuite, riz, soudure...)...">
         </div>
     </header>
@@ -106,24 +109,21 @@
             <div id="adminQueue"><!-- Rempli par JS --></div>
         </div>
 
-        <div class="categories" id="categoriesBar">
-            <button class="category-btn active" onclick="filterCategory('tous')">Tous</button>
-            <button class="category-btn" onclick="filterCategory('plomberie')">Plomberie 🔧</button>
-            <button class="category-btn" onclick="filterCategory('electronique')">Électronique ⚡</button>
-            <button class="category-btn" onclick="filterCategory('informatique')">Informatique 💻</button>
-            <button class="category-btn" onclick="filterCategory('impression 3d')">Impression 3D 🖨️</button>
-            <button class="category-btn" onclick="filterCategory('cuisine')">Cuisine 🍳</button>
-            <button class="category-btn" onclick="filterCategory('philosophie')">Bonnes Pensées 🧠</button>
+        <div id="listView">
+            <div class="categories" id="categoriesBar">
+                <button class="category-btn active" onclick="filterCategory('tous')">Tous</button>
+                <button class="category-btn" onclick="filterCategory('plomberie')">Plomberie 🔧</button>
+                <button class="category-btn" onclick="filterCategory('electronique')">Électronique ⚡</button>
+                <button class="category-btn" onclick="filterCategory('informatique')">Informatique 💻</button>
+                <button class="category-btn" onclick="filterCategory('impression 3d')">Impression 3D 🖨️</button>
+                <button class="category-btn" onclick="filterCategory('cuisine')">Cuisine 🍳</button>
+                <button class="category-btn" onclick="filterCategory('philosophie')">Bonnes Pensées 🧠</button>
+            </div>
+
+            <div class="grid" id="tipsGrid"></div>
         </div>
 
-        <div class="grid" id="tipsGrid"></div>
-    </div>
-
-    <div class="modal" id="tipModal" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close-btn" onclick="document.getElementById('tipModal').classList.remove('active')">&times;</span>
-            <div id="modalBody"></div>
-        </div>
+        <div class="astuce-page" id="astucePage"></div>
     </div>
 <script>
         // Les astuces sont maintenant stockées dans Airtable.
@@ -143,22 +143,39 @@
             } catch (error) {
                 console.error("Impossible de contacter l'API /api/astuces :", error);
             } finally {
-                checkAdminRoute();
+                handleRoute();
                 applyFilterAndSearch();
             }
         }
 
-        function checkAdminRoute() {
+        function handleRoute() {
+            const hash = window.location.hash;
             const adminPanel = document.getElementById('adminPanel');
             const pageTitle = document.getElementById('pageTitle');
-            
-            if (window.location.hash === '#admin') {
+            const listView = document.getElementById('listView');
+            const astucePage = document.getElementById('astucePage');
+            const searchContainer = document.getElementById('searchContainer');
+
+            if (hash === '#admin') {
                 if (adminPanel) adminPanel.classList.add('active');
                 if (pageTitle) pageTitle.innerText = "Mon Cerveau Numérique [ADMIN]";
+                if (listView) listView.style.display = '';
+                if (searchContainer) searchContainer.style.display = '';
+                if (astucePage) astucePage.classList.remove('active');
                 renderAdminQueue();
+            } else if (hash.startsWith('#astuce-')) {
+                const id = hash.replace('#astuce-', '');
+                if (adminPanel) adminPanel.classList.remove('active');
+                if (pageTitle) pageTitle.innerText = "Mon Cerveau Numérique";
+                if (listView) listView.style.display = 'none';
+                if (searchContainer) searchContainer.style.display = 'none';
+                renderAstucePage(id);
             } else {
                 if (adminPanel) adminPanel.classList.remove('active');
                 if (pageTitle) pageTitle.innerText = "Mon Cerveau Numérique";
+                if (listView) listView.style.display = '';
+                if (searchContainer) searchContainer.style.display = '';
+                if (astucePage) astucePage.classList.remove('active');
             }
         }
 
@@ -246,7 +263,7 @@
             publicData.forEach(tip => {
                 const card = document.createElement('div');
                 card.className = 'card';
-                card.onclick = () => openModal(tip);
+                card.onclick = () => { window.location.hash = 'astuce-' + tip.id; };
                 card.innerHTML = `
                     <div class="card-img" style="background-image: url('${tip.image || ''}')">
                         <span class="badge">${tip.categoryLabel ? tip.categoryLabel.split(' ')[0] : '💡'}</span>
@@ -286,26 +303,42 @@
             renderGrid(filtered);
         }
 
-        function openModal(tip) {
-            const modal = document.getElementById('tipModal');
-            const body = document.getElementById('modalBody');
-            if (!modal || !body) return;
-            
-            body.innerHTML = `
-                <span class="modal-badge">${tip.categoryLabel || '💡 Astuce'}</span>
-                <h2 class="modal-title">${tip.title}</h2>
-                <div style="margin-top: 15px;">
-                    <h3 style="color: #2a5298; border-left: 4px solid #2a5298; padding-left: 10px;">Détails de l'astuce</h3>
-                    <p style="line-height: 1.6; color: #444; white-space: pre-line;">${tip.fullDetail}</p>
+        function renderAstucePage(id) {
+            const astucePage = document.getElementById('astucePage');
+            if (!astucePage) return;
+            const tip = astucesData.find(t => t.id === id);
+
+            if (!tip) {
+                astucePage.innerHTML = `
+                    <button class="back-btn" onclick="goBack()">← Retour à toutes les astuces</button>
+                    <p>Astuce introuvable.</p>
+                `;
+                astucePage.classList.add('active');
+                return;
+            }
+
+            astucePage.innerHTML = `
+                <button class="back-btn" onclick="goBack()">← Retour à toutes les astuces</button>
+                <div class="astuce-hero" style="background-image: url('${tip.image || ''}')">
+                    <span class="badge">${tip.categoryLabel || '💡 Astuce'}</span>
                 </div>
-                <div style="margin-top: 30px; text-align: center;">
-                    <a href="${tip.sourceUrl}" target="_blank" class="source-link">🔗 Voir la source</a>
+                <div class="astuce-header">
+                    <h1>${tip.title}</h1>
+                    <div class="astuce-body">${tip.fullDetail}</div>
+                    <div class="astuce-footer">
+                        <a href="${tip.sourceUrl}" target="_blank" class="source-link">🔗 Voir la source originale</a>
+                    </div>
                 </div>
             `;
-            modal.classList.add('active');
+            astucePage.classList.add('active');
+            window.scrollTo(0, 0);
         }
 
-        window.addEventListener('hashchange', checkAdminRoute);
+        function goBack() {
+            window.location.hash = '';
+        }
+
+        window.addEventListener('hashchange', handleRoute);
         
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('searchInput');
