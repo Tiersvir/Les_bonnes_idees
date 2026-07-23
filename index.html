@@ -44,7 +44,37 @@
         .card-title { margin: 0 0 10px 0; font-size: 1.2rem; color: #1e3c72; }
         .card-desc { font-size: 0.9rem; color: #666; line-height: 1.4; }
         
-        /* Page dédiée à une astuce */
+        /* Page de couverture d'un thème (au-dessus de la grille) */
+        .theme-cover {
+            display: none; border-radius: 16px; margin-bottom: 30px; overflow: hidden;
+            background-color: #e9ecef; background-size: cover; background-position: center;
+        }
+        .theme-cover.active { display: block; }
+        .theme-cover-inner { background: rgba(255,255,255,0.88); padding: 30px; }
+        .theme-block-text { line-height: 1.7; color: #333; white-space: pre-line; margin-bottom: 18px; font-size: 1.02rem; }
+        .theme-block-text:last-child { margin-bottom: 0; }
+        .theme-block-image { width: 100%; max-height: 380px; object-fit: cover; border-radius: 12px; margin-bottom: 18px; }
+
+        /* Éditeur de thèmes (admin) */
+        .theme-editor { background: #fff9e6; border: 1px solid #ffe08a; border-radius: 12px; padding: 20px; margin-top: 25px; }
+        .theme-editor select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 15px; }
+        .theme-editor-bg-preview {
+            width: 100%; height: 140px; border-radius: 10px; background-size: cover; background-position: center;
+            background-color: #ddd; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; color: #888;
+        }
+        .theme-block-card { background: white; border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 12px; }
+        .theme-block-card textarea { width: 100%; min-height: 70px; padding: 8px; border-radius: 6px; border: 1px solid #ddd; font-family: inherit; box-sizing: border-box; }
+        .theme-block-card img { max-width: 100%; max-height: 160px; border-radius: 6px; display: block; margin-bottom: 8px; }
+        .theme-block-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .theme-block-actions button {
+            border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+        }
+        .btn-up-down { background: #e2e6ea; color: #333; }
+        .btn-save-block { background: #2a5298; color: white; }
+        .btn-delete-block { background: #dc3545; color: white; }
+        .add-block-buttons { margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .add-block-buttons button { background: #28a745; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .add-block-buttons label { background: #17a2b8; color: white; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
         .astuce-page { display: none; max-width: 800px; margin: 0 auto; }
         .astuce-page.active { display: block; }
         .back-btn {
@@ -107,6 +137,20 @@
             <h2 style="color: #856404; margin-top: 0;">🔧 Espace de validation des brouillons (Admin)</h2>
             <p>Voici les astuces envoyées par ton robot IA. Relis-les, modifie-les si besoin, puis valide-les pour les publier.</p>
             <div id="adminQueue"><!-- Rempli par JS --></div>
+
+            <div class="theme-editor">
+                <h3 style="margin-top: 0; color: #1e3c72;">🎨 Personnaliser les pages de thème</h3>
+                <p>Choisis un thème pour ajouter un fond d'écran, du texte ou des images sur sa page.</p>
+                <select id="themeSelector" onchange="renderAdminThemeEditor()">
+                    <option value="plomberie">Plomberie 🔧</option>
+                    <option value="electronique">Électronique ⚡</option>
+                    <option value="informatique">Informatique 💻</option>
+                    <option value="impression 3d">Impression 3D 🖨️</option>
+                    <option value="cuisine">Cuisine 🍳</option>
+                    <option value="philosophie">Bonnes Pensées 🧠</option>
+                </select>
+                <div id="themeEditorBody"><!-- Rempli par JS --></div>
+            </div>
         </div>
 
         <div id="listView">
@@ -120,6 +164,8 @@
                 <button class="category-btn" onclick="filterCategory('philosophie')">Bonnes Pensées 🧠</button>
             </div>
 
+            <div class="theme-cover" id="themeCover"><div class="theme-cover-inner" id="themeCoverInner"></div></div>
+
             <div class="grid" id="tipsGrid"></div>
         </div>
 
@@ -129,6 +175,7 @@
         // Les astuces sont maintenant stockées dans Airtable.
         // Ce tableau est rempli au chargement de la page via l'API /api/astuces.
         let astucesData = [];
+        let themesData = {};
         let currentCategory = 'tous';
 
         async function loadAstuces() {
@@ -163,6 +210,7 @@
                 if (searchContainer) searchContainer.style.display = '';
                 if (astucePage) astucePage.classList.remove('active');
                 renderAdminQueue();
+                renderAdminThemeEditor();
             } else if (hash.startsWith('#astuce-')) {
                 const id = hash.replace('#astuce-', '');
                 if (adminPanel) adminPanel.classList.remove('active');
@@ -205,6 +253,22 @@
                 `;
                 queue.appendChild(adminCard);
             });
+        }
+
+        async function loadThemes() {
+            try {
+                const response = await fetch('/api/themes');
+                if (response.ok) {
+                    themesData = await response.json();
+                } else {
+                    console.error('Erreur API themes:', (await response.json().catch(() => ({}))).error);
+                }
+            } catch (error) {
+                console.error("Impossible de contacter l'API /api/themes :", error);
+            } finally {
+                renderThemeCover(currentCategory);
+                if (window.location.hash === '#admin') renderAdminThemeEditor();
+            }
         }
 
         async function validateTip(id) {
@@ -301,6 +365,33 @@
                 return matchesCategory && matchesSearch;
             });
             renderGrid(filtered);
+            renderThemeCover(currentCategory);
+        }
+
+        function renderThemeCover(cat) {
+            const cover = document.getElementById('themeCover');
+            const inner = document.getElementById('themeCoverInner');
+            if (!cover || !inner) return;
+
+            const theme = themesData[cat];
+            if (cat === 'tous' || !theme || (!theme.background && (!theme.blocks || theme.blocks.length === 0))) {
+                cover.classList.remove('active');
+                cover.style.backgroundImage = '';
+                inner.innerHTML = '';
+                return;
+            }
+
+            cover.style.backgroundImage = theme.background ? `url('${theme.background}')` : '';
+            inner.innerHTML = (theme.blocks || []).map(block => {
+                if (block.type === 'Image' && block.image) {
+                    return `<img class="theme-block-image" src="${block.image}" alt="">`;
+                }
+                if (block.type === 'Texte' && block.texte) {
+                    return `<div class="theme-block-text">${block.texte}</div>`;
+                }
+                return '';
+            }).join('');
+            cover.classList.add('active');
         }
 
         function renderAstucePage(id) {
@@ -338,6 +429,208 @@
             window.location.hash = '';
         }
 
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function renderAdminThemeEditor() {
+            const body = document.getElementById('themeEditorBody');
+            const selector = document.getElementById('themeSelector');
+            if (!body || !selector) return;
+
+            const key = selector.value;
+            const theme = themesData[key];
+
+            if (!theme) {
+                body.innerHTML = '<p>Chargement du thème...</p>';
+                return;
+            }
+
+            let blocksHtml = (theme.blocks || []).map((block, index) => {
+                if (block.type === 'Image') {
+                    return `
+                        <div class="theme-block-card">
+                            <strong>🖼️ Bloc image</strong>
+                            ${block.image ? `<img src="${block.image}">` : '<p style="color:#999;">Aucune image envoyée.</p>'}
+                            <input type="file" accept="image/*" onchange="uploadExistingBlockImage('${block.id}', this.files[0])">
+                            <div class="theme-block-actions">
+                                <button class="btn-up-down" onclick="moveBlock('${key}', '${block.id}', -1)">⬆️ Monter</button>
+                                <button class="btn-up-down" onclick="moveBlock('${key}', '${block.id}', 1)">⬇️ Descendre</button>
+                                <button class="btn-delete-block" onclick="deleteBlock('${block.id}')">❌ Supprimer</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                return `
+                    <div class="theme-block-card">
+                        <strong>📝 Bloc texte</strong>
+                        <textarea id="blockText-${block.id}">${block.texte || ''}</textarea>
+                        <div class="theme-block-actions">
+                            <button class="btn-save-block" onclick="saveBlockText('${block.id}')">💾 Enregistrer</button>
+                            <button class="btn-up-down" onclick="moveBlock('${key}', '${block.id}', -1)">⬆️ Monter</button>
+                            <button class="btn-up-down" onclick="moveBlock('${key}', '${block.id}', 1)">⬇️ Descendre</button>
+                            <button class="btn-delete-block" onclick="deleteBlock('${block.id}')">❌ Supprimer</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            body.innerHTML = `
+                <div class="theme-editor-bg-preview" style="${theme.background ? `background-image:url('${theme.background}')` : ''}">
+                    ${theme.background ? '' : 'Aucun fond d\'écran pour le moment'}
+                </div>
+                <input type="file" accept="image/*" onchange="uploadThemeBackground('${theme.id}', this.files[0])">
+
+                <h4 style="margin-top: 25px;">Blocs de la page</h4>
+                ${blocksHtml || '<p style="color:#999;">Aucun bloc pour le moment.</p>'}
+
+                <div class="add-block-buttons">
+                    <button onclick="addTextBlock('${theme.id}', '${key}')">➕ Ajouter un bloc texte</button>
+                    <label>➕ Ajouter un bloc image
+                        <input type="file" accept="image/*" style="display:none" onchange="addImageBlock('${theme.id}', '${key}', this.files[0])">
+                    </label>
+                </div>
+            `;
+        }
+
+        async function uploadThemeBackground(themeId, file) {
+            if (!file) return;
+            try {
+                const fileBase64 = await fileToBase64(file);
+                const response = await fetch('/api/themes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'uploadBackground', themeId, fileBase64, filename: file.name, contentType: file.type })
+                });
+                if (!response.ok) throw new Error((await response.json()).error || 'Erreur inconnue');
+                await loadThemes();
+                renderAdminThemeEditor();
+            } catch (error) {
+                alert(`Erreur lors de l'envoi du fond d'écran : ${error.message}`);
+            }
+        }
+
+        async function addTextBlock(themeId, key) {
+            try {
+                const response = await fetch('/api/themes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'addBlock', themeId, type: 'Texte', texte: 'Écris ton texte ici...' })
+                });
+                if (!response.ok) throw new Error((await response.json()).error || 'Erreur inconnue');
+                await loadThemes();
+                renderAdminThemeEditor();
+            } catch (error) {
+                alert(`Erreur lors de l'ajout du bloc : ${error.message}`);
+            }
+        }
+
+        async function addImageBlock(themeId, key, file) {
+            if (!file) return;
+            try {
+                const createResponse = await fetch('/api/themes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'addBlock', themeId, type: 'Image' })
+                });
+                if (!createResponse.ok) throw new Error((await createResponse.json()).error || 'Erreur inconnue');
+                const created = await createResponse.json();
+
+                const fileBase64 = await fileToBase64(file);
+                const uploadResponse = await fetch('/api/themes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'uploadBlockImage', blockId: created.id, fileBase64, filename: file.name, contentType: file.type })
+                });
+                if (!uploadResponse.ok) throw new Error((await uploadResponse.json()).error || 'Erreur inconnue');
+
+                await loadThemes();
+                renderAdminThemeEditor();
+            } catch (error) {
+                alert(`Erreur lors de l'ajout de l'image : ${error.message}`);
+            }
+        }
+
+        async function uploadExistingBlockImage(blockId, file) {
+            if (!file) return;
+            try {
+                const fileBase64 = await fileToBase64(file);
+                const response = await fetch('/api/themes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'uploadBlockImage', blockId, fileBase64, filename: file.name, contentType: file.type })
+                });
+                if (!response.ok) throw new Error((await response.json()).error || 'Erreur inconnue');
+                await loadThemes();
+                renderAdminThemeEditor();
+            } catch (error) {
+                alert(`Erreur lors du remplacement de l'image : ${error.message}`);
+            }
+        }
+
+        async function saveBlockText(blockId) {
+            const textarea = document.getElementById(`blockText-${blockId}`);
+            if (!textarea) return;
+            try {
+                const response = await fetch(`/api/themes?blockId=${encodeURIComponent(blockId)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ texte: textarea.value })
+                });
+                if (!response.ok) throw new Error((await response.json()).error || 'Erreur inconnue');
+                await loadThemes();
+                alert('Texte enregistré !');
+            } catch (error) {
+                alert(`Erreur lors de l'enregistrement : ${error.message}`);
+            }
+        }
+
+        async function deleteBlock(blockId) {
+            if (!confirm('Supprimer ce bloc définitivement ?')) return;
+            try {
+                const response = await fetch(`/api/themes?blockId=${encodeURIComponent(blockId)}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error((await response.json()).error || 'Erreur inconnue');
+                await loadThemes();
+                renderAdminThemeEditor();
+            } catch (error) {
+                alert(`Erreur lors de la suppression : ${error.message}`);
+            }
+        }
+
+        async function moveBlock(key, blockId, direction) {
+            const theme = themesData[key];
+            if (!theme) return;
+            const blocks = theme.blocks || [];
+            const index = blocks.findIndex(b => b.id === blockId);
+            const targetIndex = index + direction;
+            if (index === -1 || targetIndex < 0 || targetIndex >= blocks.length) return;
+
+            const blockA = blocks[index];
+            const blockB = blocks[targetIndex];
+
+            try {
+                await Promise.all([
+                    fetch(`/api/themes?blockId=${encodeURIComponent(blockA.id)}`, {
+                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ordre: blockB.ordre })
+                    }),
+                    fetch(`/api/themes?blockId=${encodeURIComponent(blockB.id)}`, {
+                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ordre: blockA.ordre })
+                    })
+                ]);
+                await loadThemes();
+                renderAdminThemeEditor();
+            } catch (error) {
+                alert(`Erreur lors du déplacement : ${error.message}`);
+            }
+        }
+
         window.addEventListener('hashchange', handleRoute);
         
         document.addEventListener('DOMContentLoaded', function() {
@@ -346,6 +639,7 @@
                 searchInput.addEventListener('input', applyFilterAndSearch);
             }
             loadAstuces();
+            loadThemes();
         });
     </script>
  
