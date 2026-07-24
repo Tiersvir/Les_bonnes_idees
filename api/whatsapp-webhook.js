@@ -69,10 +69,10 @@ async function extractSourceInfo(url) {
   };
 }
 
-// --- Appelle l'API Claude pour générer le résumé structuré ---
+// --- Appelle l'API Gemini (gratuite) pour générer le résumé structuré ---
 async function generateSummary(sourceInfo, sourceUrl) {
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-  if (!ANTHROPIC_API_KEY) throw new Error('Clé ANTHROPIC_API_KEY manquante sur Vercel');
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  if (!GEMINI_API_KEY) throw new Error('Clé GEMINI_API_KEY manquante sur Vercel');
 
   const contextLines = [
     `Lien source : ${sourceUrl}`,
@@ -93,25 +93,22 @@ Réponds UNIQUEMENT avec un objet JSON strict (pas de texte autour, pas de \`\`\
 
 Si le titre original ne donne pas assez d'informations pour déduire l'astuce avec certitude, fais de ton mieux à partir du titre et indique dans fullDetail qu'il faudra vérifier le contenu source.`;
 
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
+  const model = 'gemini-2.5-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+
+  const r = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 600,
-      messages: [{ role: 'user', content: prompt }]
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json' }
     })
   });
 
   const data = await r.json();
-  if (!r.ok) throw new Error(data.error?.message || 'Erreur API Claude');
+  if (!r.ok) throw new Error(data.error?.message || 'Erreur API Gemini');
 
-  const textBlock = (data.content || []).find(b => b.type === 'text');
-  const raw = textBlock ? textBlock.text : '{}';
+  const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
   const clean = raw.replace(/```json|```/g, '').trim();
 
   let parsed;
