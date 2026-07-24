@@ -93,7 +93,7 @@ Réponds UNIQUEMENT avec un objet JSON strict (pas de texte autour, pas de \`\`\
 
 Si le titre original ne donne pas assez d'informations pour déduire l'astuce avec certitude, fais de ton mieux à partir du titre et indique dans fullDetail qu'il faudra vérifier le contenu source.`;
 
-  const model = 'gemini-2.5-flash';
+  const model = 'gemini-3-flash-preview';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
 
   const r = await fetch(url, {
