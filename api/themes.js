@@ -13,6 +13,7 @@ const FIELD_BLOC_IMAGE = 'fldA9ZLmQJgyAdJkC';
 
 // Correspondance Nom Airtable <-> clé catégorie utilisée sur le site
 const NAME_TO_KEY = {
+  'Accueil': 'tous',
   'Plomberie': 'plomberie',
   'Électronique': 'electronique',
   'Informatique': 'informatique',
