@@ -117,6 +117,7 @@ module.exports = async function handler(req, res) {
       if (body.summary !== undefined) fields['Résumé'] = body.summary;
       if (body.fullDetail !== undefined) fields['Détail complet'] = body.fullDetail;
       if (body.category !== undefined && body.category !== '') fields['Catégorie'] = body.category;
+      if (body.imageUrl !== undefined && body.imageUrl !== '') fields['Images'] = [{ url: body.imageUrl }];
       if (body.status !== undefined) fields['Statut'] = body.status === 'valide' ? 'Validé' : 'Brouillon';
 
       const r = await fetch(`${AIRTABLE_URL}/${id}`, {
