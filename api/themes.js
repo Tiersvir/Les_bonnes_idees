@@ -61,7 +61,13 @@ module.exports = async function handler(req, res) {
       themeRecords.forEach(rec => {
         const key = NAME_TO_KEY[rec.fields['Nom']] || (rec.fields['Nom'] || '').toLowerCase();
         const bg = rec.fields["Fond d'écran"] && rec.fields["Fond d'écran"][0] ? rec.fields["Fond d'écran"][0].url : null;
-        const themeObj = { id: rec.id, name: rec.fields['Nom'] || '', background: bg, blocks: [] };
+        const themeObj = {
+          id: rec.id,
+          name: rec.fields['Nom'] || '',
+          background: bg,
+          couleur: rec.fields['Couleur'] || null,
+          blocks: []
+        };
         themesByRecordId[rec.id] = themeObj;
         result[key] = themeObj;
       });
@@ -156,10 +162,27 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'action inconnue' });
     }
 
-    // --- MODIFIER UN BLOC (texte ou ordre) ---
+    // --- MODIFIER UN BLOC (texte, taille, position) OU UN THÈME (couleur) ---
     if (req.method === 'PATCH') {
-      const { blockId } = req.query;
-      if (!blockId) return res.status(400).json({ error: 'blockId manquant' });
+      const { blockId, themeId } = req.query;
+
+      // Modification d'un thème entier (ex: couleur du bandeau pour "Accueil")
+      if (themeId) {
+        const body = req.body || {};
+        const fields = {};
+        if (body.couleur !== undefined) fields['Couleur'] = body.couleur;
+
+        const r = await fetch(`${THEMES_URL}/${themeId}`, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({ fields })
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error?.message || 'Erreur Airtable (modification thème)');
+        return res.status(200).json({ success: true });
+      }
+
+      if (!blockId) return res.status(400).json({ error: 'blockId ou themeId manquant' });
 
       const body = req.body || {};
       const fields = {};
