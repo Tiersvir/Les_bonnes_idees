@@ -1,6 +1,13 @@
 // Fonction serverless Vercel : reçoit les messages WhatsApp (via Twilio),
-// résume le lien envoyé avec Claude, et crée un brouillon dans Airtable
+// résume le lien envoyé avec Gemini, et crée un brouillon dans Airtable
 // (via /api/astuces) prêt à être validé côté admin.
+//
+// Fonctionnement en 2 temps :
+// 1. On répond IMMÉDIATEMENT à Twilio (obligatoire sous ~15s, sinon Twilio abandonne).
+// 2. Le traitement réel (récupération du lien + IA + Airtable) continue en arrière-plan
+//    grâce à waitUntil, puis un second message est envoyé via l'API Twilio avec le résultat.
+
+const { waitUntil } = require('@vercel/functions');
 
 const CATEGORIES = ['Plomberie', 'Électronique', 'Informatique', 'Impression 3D', 'Cuisine', 'Bonnes Pensées'];
 
@@ -11,29 +18,72 @@ module.exports = async function handler(req, res) {
 
   // Twilio envoie les données en application/x-www-form-urlencoded
   const messageBody = (req.body && req.body.Body) || '';
+  const from = (req.body && req.body.From) || ''; // ex: "whatsapp:+33612345678"
 
   const urlMatch = messageBody.match(/(https?:\/\/[^\s]+)/);
   if (!urlMatch) {
-    return sendTwiml(res, "Envoie-moi un lien (YouTube, Instagram...) et je m'occupe de créer la fiche 👍");
+    sendTwiml(res, "Envoie-moi un lien (YouTube, Instagram, un site...) et je m'occupe de créer la fiche 👍");
+    return;
   }
   const sourceUrl = urlMatch[1];
 
+  // 1. Réponse immédiate pour rester sous le délai limite de Twilio
+  sendTwiml(res, "🔎 C'est bien reçu ! Je regarde ce lien, je reviens vers toi dans quelques instants avec le résultat...");
+
+  // 2. Traitement en arrière-plan (peut prendre plus de temps que la limite Twilio)
+  waitUntil(processLink(sourceUrl, from));
+};
+
+async function processLink(sourceUrl, from) {
   try {
     const sourceInfo = await extractSourceInfo(sourceUrl);
     const summary = await generateSummary(sourceInfo, sourceUrl);
     await createDraft(summary, sourceUrl, sourceInfo.thumbnail);
 
-    return sendTwiml(res, `C'est noté ! 📝 J'ai créé le brouillon "${summary.title}" (catégorie : ${summary.category}). Va le valider sur le site.`);
+    await sendWhatsappMessage(from, `✅ C'est ajouté ! Brouillon "${summary.title}" (catégorie : ${summary.category}) prêt à valider sur le site.`);
   } catch (err) {
-    console.error('Erreur webhook WhatsApp:', err);
-    return sendTwiml(res, `Oups, je n'ai pas réussi à traiter ce lien 😕 (${err.message})`);
+    console.error('Erreur traitement lien WhatsApp:', err);
+    await sendWhatsappMessage(from, `😕 Je n'ai pas réussi à traiter ce lien (${err.message})`);
   }
-};
+}
 
-// --- Répond à Twilio au format TwiML attendu ---
+// --- Répond immédiatement à Twilio au format TwiML attendu ---
 function sendTwiml(res, message) {
   res.setHeader('Content-Type', 'text/xml');
-  return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(message)}</Message></Response>`);
+  res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(message)}</Message></Response>`);
+}
+
+// --- Envoie un second message WhatsApp via l'API Twilio (message "sortant", indépendant du webhook) ---
+async function sendWhatsappMessage(to, body) {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const fromNumber = process.env.TWILIO_WHATSAPP_NUMBER; // ex: "whatsapp:+14155238886"
+
+  if (!accountSid || !authToken || !fromNumber || !to) {
+    console.error('Configuration Twilio incomplète : impossible d\'envoyer le message de suivi.');
+    return;
+  }
+
+  const params = new URLSearchParams();
+  params.append('From', fromNumber);
+  params.append('To', to);
+  params.append('Body', body);
+
+  const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+
+  const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: params.toString()
+  });
+
+  if (!r.ok) {
+    const errText = await r.text().catch(() => '');
+    console.error('Erreur envoi message Twilio de suivi:', errText);
+  }
 }
 
 function escapeXml(str) {
@@ -59,14 +109,54 @@ async function extractSourceInfo(url) {
     };
   }
 
-  // Instagram / TikTok / autres : pas d'accès public simple sans scraping dédié.
-  // On transmet juste le lien à Claude, qui devra travailler avec peu de contexte.
-  return {
-    platform: 'autre',
-    title: null,
-    author: null,
-    thumbnail: null
-  };
+  // Cas général (MakerWorld, blogs, articles, la plupart des sites...) :
+  // on lit les balises Open Graph que les sites utilisent pour les aperçus de partage.
+  // Note : certains réseaux comme Instagram ou TikTok bloquent ce type de lecture
+  // automatique, le brouillon sera alors créé avec moins de détails (à compléter à la main).
+  try {
+    const r = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LesBonnesIdeesBot/1.0; +https://les-bonnes-idees.vercel.app)' }
+    });
+    if (!r.ok) throw new Error(`page inaccessible (code ${r.status})`);
+    const html = await r.text();
+
+    const title = extractMeta(html, 'og:title') || extractTitleTag(html);
+    const description = extractMeta(html, 'og:description') || extractMeta(html, 'description');
+    const image = extractMeta(html, 'og:image');
+    const author = extractMeta(html, 'og:site_name');
+
+    return { platform: 'générique', title, author, thumbnail: image, description };
+  } catch (e) {
+    console.error('Lecture générique de la page échouée:', e.message);
+    return { platform: 'inconnu', title: null, author: null, thumbnail: null, description: null };
+  }
+}
+
+// --- Petits utilitaires d'extraction de balises <meta> dans du HTML brut ---
+function extractMeta(html, property) {
+  const patterns = [
+    new RegExp(`<meta[^>]+(?:property|name)=["']${property}["'][^>]+content=["']([^"']+)["']`, 'i'),
+    new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${property}["']`, 'i')
+  ];
+  for (const re of patterns) {
+    const m = html.match(re);
+    if (m) return decodeHtmlEntities(m[1]);
+  }
+  return null;
+}
+
+function extractTitleTag(html) {
+  const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  return m ? decodeHtmlEntities(m[1]) : null;
+}
+
+function decodeHtmlEntities(str) {
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0*39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
 }
 
 // --- Appelle l'API Gemini (gratuite) pour générer le résumé structuré ---
@@ -77,7 +167,8 @@ async function generateSummary(sourceInfo, sourceUrl) {
   const contextLines = [
     `Lien source : ${sourceUrl}`,
     sourceInfo.title ? `Titre original : ${sourceInfo.title}` : null,
-    sourceInfo.author ? `Auteur / chaîne : ${sourceInfo.author}` : null
+    sourceInfo.author ? `Auteur / chaîne / site : ${sourceInfo.author}` : null,
+    sourceInfo.description ? `Description : ${sourceInfo.description}` : null
   ].filter(Boolean).join('\n');
 
   const prompt = `Voici le contenu d'où vient une astuce à résumer :
