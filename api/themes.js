@@ -1,15 +1,13 @@
-// Fonction serverless Vercel : gère les pages de présentation personnalisables par thème
-// (fond d'écran + blocs texte/image), stockées dans Airtable (tables "Themes" et "Blocs").
+// Fonction serverless Vercel : gère les réglages d'apparence du site
+// (couleur ou image du bandeau du haut, couleur ou image du fond de page),
+// stockés dans Airtable (table "Themes", ligne "Accueil").
+//
+// NB : le système de blocs texte/image positionnables a été retiré (trop complexe
+// à utiliser). Seule l'apparence globale du site (en-tête + fond de page) reste ici.
 
 const THEMES_TABLE = 'tbl6K25lKdjMYq8Mf';
-const BLOCS_TABLE = 'tblpQoTo0lFiXCRG4';
 const BASE_ID = 'appgjg6HgW9nDLAon';
 const THEMES_URL = `https://api.airtable.com/v0/${BASE_ID}/${THEMES_TABLE}`;
-const BLOCS_URL = `https://api.airtable.com/v0/${BASE_ID}/${BLOCS_TABLE}`;
-
-// Champs (IDs) utilisés pour l'upload d'images (l'API d'upload Airtable veut des IDs de champ)
-const FIELD_THEME_BACKGROUND = 'fldqkcvKDUWq5pnMB';
-const FIELD_BLOC_IMAGE = 'fldA9ZLmQJgyAdJkC';
 
 // Correspondance Nom Airtable <-> clé catégorie utilisée sur le site
 const NAME_TO_KEY = {
@@ -21,6 +19,12 @@ const NAME_TO_KEY = {
   'Cuisine': 'cuisine',
   'Bonnes Pensées': 'philosophie'
 };
+
+function checkAdminPassword(req) {
+  const expected = process.env.ADMIN_PASSWORD;
+  const provided = req.headers['x-admin-password'];
+  return Boolean(expected) && provided === expected;
+}
 
 async function fetchAllRecords(url, headers) {
   let records = [];
@@ -48,168 +52,49 @@ module.exports = async function handler(req, res) {
   };
 
   try {
-    // --- LISTER LES THÈMES + LEURS BLOCS ---
+    // --- LISTER LES THÈMES (réglages d'apparence) ---
     if (req.method === 'GET') {
-      const [themeRecords, blocRecords] = await Promise.all([
-        fetchAllRecords(THEMES_URL, headers),
-        fetchAllRecords(BLOCS_URL, headers)
-      ]);
-
-      const themesByRecordId = {};
+      const themeRecords = await fetchAllRecords(THEMES_URL, headers);
       const result = {};
 
       themeRecords.forEach(rec => {
         const key = NAME_TO_KEY[rec.fields['Nom']] || (rec.fields['Nom'] || '').toLowerCase();
-        const bg = rec.fields["Fond d'écran"] && rec.fields["Fond d'écran"][0] ? rec.fields["Fond d'écran"][0].url : null;
-        const themeObj = {
+        result[key] = {
           id: rec.id,
           name: rec.fields['Nom'] || '',
-          background: bg,
           couleur: rec.fields['Couleur'] || null,
-          blocks: []
+          imageEntete: rec.fields['Image en-tête'] || null,
+          couleurFondPage: rec.fields['Couleur fond page'] || null,
+          imageFondPage: rec.fields['Image fond page'] || null
         };
-        themesByRecordId[rec.id] = themeObj;
-        result[key] = themeObj;
-      });
-
-      blocRecords.forEach(rec => {
-        const links = rec.fields['Thème'] || [];
-        links.forEach(themeRecId => {
-          const themeObj = themesByRecordId[themeRecId];
-          if (!themeObj) return;
-          themeObj.blocks.push({
-            id: rec.id,
-            type: rec.fields['Type'] || 'Texte',
-            texte: rec.fields['Texte'] || '',
-            image: (rec.fields['Image'] && rec.fields['Image'][0]) ? rec.fields['Image'][0].url : '',
-            ordre: rec.fields['Ordre'] || 0,
-            posX: rec.fields['PosX'] !== undefined ? rec.fields['PosX'] : 10,
-            posY: rec.fields['PosY'] !== undefined ? rec.fields['PosY'] : 10,
-            largeur: rec.fields['Largeur'] !== undefined ? rec.fields['Largeur'] : 40
-          });
-        });
-      });
-
-      Object.values(result).forEach(themeObj => {
-        themeObj.blocks.sort((a, b) => a.ordre - b.ordre);
       });
 
       return res.status(200).json(result);
     }
 
-    // --- CRÉER UN BLOC / UPLOADER UNE IMAGE ---
-    if (req.method === 'POST') {
-      const body = req.body || {};
-
-      if (body.action === 'addBlock') {
-        const { themeId, type, texte } = body;
-        if (!themeId || !type) return res.status(400).json({ error: 'themeId et type requis' });
-
-        const ordre = Date.now();
-        const posX = 8 + Math.round(Math.random() * 25);
-        const posY = 8 + Math.round(Math.random() * 25);
-        const r = await fetch(BLOCS_URL, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            fields: {
-              'Titre du bloc': type === 'Image' ? 'Bloc image' : 'Bloc texte',
-              'Thème': [themeId],
-              'Type': type,
-              'Texte': texte || '',
-              'Ordre': ordre,
-              'PosX': posX,
-              'PosY': posY,
-              'Largeur': type === 'Image' ? 40 : 35
-            }
-          })
-        });
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error?.message || 'Erreur Airtable (création bloc)');
-        return res.status(200).json({ success: true, id: data.id, ordre, posX, posY });
-      }
-
-      if (body.action === 'uploadBlockImage' || body.action === 'uploadBackground') {
-        const { fileBase64, filename, contentType } = body;
-        if (!fileBase64 || !filename || !contentType) {
-          return res.status(400).json({ error: 'fileBase64, filename et contentType requis' });
-        }
-
-        let recordId, fieldId;
-        if (body.action === 'uploadBlockImage') {
-          recordId = body.blockId;
-          fieldId = FIELD_BLOC_IMAGE;
-        } else {
-          recordId = body.themeId;
-          fieldId = FIELD_THEME_BACKGROUND;
-        }
-        if (!recordId) return res.status(400).json({ error: 'id manquant' });
-
-        const uploadUrl = `https://content.airtable.com/v0/${BASE_ID}/${recordId}/${fieldId}/uploadAttachment`;
-        const r = await fetch(uploadUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ contentType, file: fileBase64, filename })
-        });
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error?.message || "Erreur Airtable (upload d'image)");
-        return res.status(200).json({ success: true });
-      }
-
-      return res.status(400).json({ error: 'action inconnue' });
-    }
-
-    // --- MODIFIER UN BLOC (texte, taille, position) OU UN THÈME (couleur) ---
+    // --- MODIFIER L'APPARENCE DU SITE (couleur/image de l'en-tête ou du fond de page) ---
     if (req.method === 'PATCH') {
-      const { blockId, themeId } = req.query;
-
-      // Modification d'un thème entier (ex: couleur du bandeau pour "Accueil")
-      if (themeId) {
-        const body = req.body || {};
-        const fields = {};
-        if (body.couleur !== undefined) fields['Couleur'] = body.couleur;
-
-        const r = await fetch(`${THEMES_URL}/${themeId}`, {
-          method: 'PATCH',
-          headers,
-          body: JSON.stringify({ fields })
-        });
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error?.message || 'Erreur Airtable (modification thème)');
-        return res.status(200).json({ success: true });
+      if (!checkAdminPassword(req)) {
+        return res.status(401).json({ error: 'Mot de passe admin incorrect ou manquant' });
       }
 
-      if (!blockId) return res.status(400).json({ error: 'blockId ou themeId manquant' });
+      const { themeId } = req.query;
+      if (!themeId) return res.status(400).json({ error: 'themeId manquant' });
 
       const body = req.body || {};
       const fields = {};
-      if (body.texte !== undefined) fields['Texte'] = body.texte;
-      if (body.ordre !== undefined) fields['Ordre'] = body.ordre;
-      if (body.posX !== undefined) fields['PosX'] = body.posX;
-      if (body.posY !== undefined) fields['PosY'] = body.posY;
-      if (body.largeur !== undefined) fields['Largeur'] = body.largeur;
+      if (body.couleur !== undefined) fields['Couleur'] = body.couleur;
+      if (body.imageEntete !== undefined) fields['Image en-tête'] = body.imageEntete;
+      if (body.couleurFondPage !== undefined) fields['Couleur fond page'] = body.couleurFondPage;
+      if (body.imageFondPage !== undefined) fields['Image fond page'] = body.imageFondPage;
 
-      const r = await fetch(`${BLOCS_URL}/${blockId}`, {
+      const r = await fetch(`${THEMES_URL}/${themeId}`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify({ fields })
       });
       const data = await r.json();
-      if (!r.ok) throw new Error(data.error?.message || 'Erreur Airtable (modification bloc)');
-      return res.status(200).json({ success: true });
-    }
-
-    // --- SUPPRIMER UN BLOC ---
-    if (req.method === 'DELETE') {
-      const { blockId } = req.query;
-      if (!blockId) return res.status(400).json({ error: 'blockId manquant' });
-
-      const r = await fetch(`${BLOCS_URL}/${blockId}`, { method: 'DELETE', headers });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error?.message || 'Erreur Airtable (suppression bloc)');
+      if (!r.ok) throw new Error(data.error?.message || 'Erreur Airtable (modification thème)');
       return res.status(200).json({ success: true });
     }
 
