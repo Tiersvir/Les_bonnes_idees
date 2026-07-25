@@ -147,12 +147,16 @@
             padding: 6px 10px; border-radius: 4px; border: 1px solid #eee;
         }
         .admin-source-link a { color: #2a5298; }
+        .btn-fullpage {
+            background: #6f42c1; color: white; border: none; padding: 6px 12px;
+            border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
 
     <header>
-        <h1 id="pageTitle">Les bonnes idées</h1>
+        <h1 id="pageTitle">Mon Cerveau Numérique</h1>
         <p class="subtitle">Toutes mes astuces du quotidien, triées et résumées par IA</p>
         <div class="search-container" id="searchContainer">
             <input type="text" id="searchInput" placeholder="Rechercher une astuce (ex: fuite, riz, soudure...)...">
@@ -441,6 +445,12 @@
             renderThemeCover(currentCategory);
         }
 
+        // Calcule la hauteur d'un bloc image : 60% de sa largeur normalement,
+        // mais 100% (pleine hauteur) si le bloc est réglé en largeur 100% ("pleine page").
+        function imageBlockHeight(width) {
+            return width >= 100 ? '100%' : (width * 0.6) + '%';
+        }
+
         function renderThemeCover(cat) {
             const cover = document.getElementById('themeCover');
             const inner = document.getElementById('themeCoverInner');
@@ -461,7 +471,7 @@
                 const width = (block.largeur !== undefined ? block.largeur : 40);
                 const style = `left:${left}%; top:${top}%; width:${width}%;`;
                 if (block.type === 'Image' && block.image) {
-                    return `<div class="theme-block-image" style="${style} height:${width * 0.6}%;"><img src="${block.image}" alt=""></div>`;
+                    return `<div class="theme-block-image" style="${style} height:${imageBlockHeight(width)};"><img src="${block.image}" alt=""></div>`;
                 }
                 if (block.type === 'Texte' && block.texte) {
                     return `<div class="theme-block-text" style="${style}">${block.texte}</div>`;
@@ -582,7 +592,7 @@
                 const left = (block.posX !== undefined ? block.posX : 10);
                 const top = (block.posY !== undefined ? block.posY : 10);
                 const width = (block.largeur !== undefined ? block.largeur : 40);
-                const style = `left:${left}%; top:${top}%; width:${width}%; height:${block.type === 'Image' ? (width * 0.6) + '%' : 'auto'};`;
+                const style = `left:${left}%; top:${top}%; width:${width}%; height:${block.type === 'Image' ? imageBlockHeight(width) : 'auto'};`;
                 const inner = block.type === 'Image'
                     ? (block.image ? `<img src="${block.image}" alt="">` : '<div class="canvas-placeholder">🖼️ image</div>')
                     : `<div class="canvas-text-preview">${(block.texte || 'texte vide').slice(0, 80)}</div>`;
@@ -603,6 +613,7 @@
                                         onchange="updateBlockSize('${block.id}', this.value)">
                                 </label>
                                 <span>${block.largeur !== undefined ? block.largeur : 40}%</span>
+                                <button class="btn-fullpage" onclick="makeFullPage('${block.id}')">🖼️ Pleine page</button>
                                 <button class="btn-delete-block" onclick="deleteBlock('${block.id}')">❌ Supprimer</button>
                             </div>
                         </div>
@@ -720,6 +731,22 @@
                 renderAdminThemeEditor();
             } catch (error) {
                 alert(`Erreur lors du redimensionnement : ${error.message}`);
+            }
+        }
+
+        // Fait occuper au bloc toute la page (largeur 100%, hauteur 100%, coin haut-gauche)
+        async function makeFullPage(blockId) {
+            try {
+                const response = await fetch(`/api/themes?blockId=${encodeURIComponent(blockId)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ posX: 0, posY: 0, largeur: 100 })
+                });
+                if (!response.ok) throw new Error(await parseErrorResponse(response));
+                await loadThemes();
+                renderAdminThemeEditor();
+            } catch (error) {
+                alert(`Erreur lors du passage en pleine page : ${error.message}`);
             }
         }
 
