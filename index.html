@@ -142,6 +142,11 @@
         .admin-input {
             width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;
         }
+        .admin-source-link {
+            font-size: 0.85rem; word-break: break-all; background: #f8f9fa;
+            padding: 6px 10px; border-radius: 4px; border: 1px solid #eee;
+        }
+        .admin-source-link a { color: #2a5298; }
     </style>
 </head>
 <body>
@@ -267,6 +272,7 @@
                 adminCard.className = 'admin-card';
                 adminCard.innerHTML = `
                     <div><strong>Titre proposé :</strong> <input type="text" class="admin-input" id="title-${tip.id}" value="${tip.title}"></div>
+                    <div class="admin-source-link">🔗 <strong>Lien source :</strong> <a href="${tip.sourceUrl}" target="_blank" rel="noopener noreferrer">${tip.sourceUrl}</a></div>
                     <div>
                         <strong>Catégorie / thème :</strong>
                         <select class="admin-input" id="category-${tip.id}" onchange="toggleCustomCategory('${tip.id}')">
