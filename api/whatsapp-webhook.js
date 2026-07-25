@@ -176,13 +176,18 @@ ${contextLines}
 
 Réponds UNIQUEMENT avec un objet JSON strict (pas de texte autour, pas de \`\`\`), au format :
 {
-  "title": "titre court et accrocheur de l'astuce (max 60 caractères)",
+  "title": "titre concret et précis de l'astuce (max 60 caractères)",
   "category": "une valeur EXACTE parmi : ${CATEGORIES.join(', ')}",
   "summary": "résumé en une phrase, max 20 mots",
   "fullDetail": "explication détaillée de l'astuce en 3 à 5 phrases"
 }
 
-Si le titre original ne donne pas assez d'informations pour déduire l'astuce avec certitude, fais de ton mieux à partir du titre et indique dans fullDetail qu'il faudra vérifier le contenu source.`;
+Consignes importantes pour que la fiche soit facilement trouvable dans un moteur de recherche interne :
+- Le titre doit nommer l'action et l'objet précis concernés (ex: "Déboucher un siphon avec du bicarbonate et du vinaigre"), jamais une formule vague comme "Astuce plomberie" ou "Vu sur la cuisine".
+- Le résumé et le détail doivent citer les mots-clés concrets présents dans le titre/la description d'origine : noms d'outils, de produits, de techniques, de matériaux, de logiciels, de marques, de mesures (ex: "colle époxy", "clé à molette", "réglage de température à 60°C").
+- N'utilise JAMAIS le nom de la catégorie comme substitut au titre ou au résumé.
+- Si le titre original est trop vague pour être précis (ex: juste "Regarde ça 😱"), base-toi sur la description ; si vraiment rien de concret n'est disponible, dis-le explicitement dans fullDetail ("Contenu à vérifier manuellement, la source ne donnait pas assez de détails") plutôt que d'inventer des détails.
+- N'invente aucun fait technique qui ne soit pas suggéré par le titre/la description fournis.`;
 
   const model = 'gemini-3-flash-preview';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
