@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Cerveau Numérique - Moteur d'Astuces</title>
+    <title>Les bonnes idées du web - Moteur d'Astuces</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body {
@@ -11,7 +11,7 @@
             margin: 0; padding: 0; background-color: #f4f7f6; color: #333;
         }
         header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: var(--header-color, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
             color: white; padding: 40px 20px; text-align: center;
         }
         h1 { margin: 0; font-size: 2.2rem; }
@@ -47,11 +47,14 @@
         /* Page de couverture d'un thème (au-dessus de la grille) */
         .theme-cover {
             display: none; border-radius: 16px; margin-bottom: 30px; overflow: hidden;
-            background-color: #e9ecef; background-size: cover; background-position: center;
-            position: relative; min-height: 420px;
+            background-color: #e9ecef; position: relative; min-height: 650px;
         }
         .theme-cover.active { display: block; }
-        .theme-cover-inner { position: relative; width: 100%; min-height: 420px; }
+        .theme-cover-photo {
+            position: absolute; top: 0; left: 0; width: 100%; height: 260px;
+            background-size: cover; background-position: center; border-radius: 16px 16px 0 0;
+        }
+        .theme-cover-inner { position: relative; width: 100%; min-height: 650px; }
         .theme-block-text {
             position: absolute; line-height: 1.6; color: #333; white-space: pre-line; font-size: 1rem;
             background: rgba(255,255,255,0.92); padding: 14px 18px; border-radius: 10px; box-sizing: border-box;
@@ -82,9 +85,18 @@
         /* Canevas de positionnement libre (glisser-déposer) */
         .theme-canvas-hint { font-size: 0.85rem; color: #666; margin: 10px 0; }
         .theme-canvas {
-            position: relative; width: 100%; height: 420px; border-radius: 10px;
-            background-size: cover; background-position: center; background-color: #ddd;
+            position: relative; width: 100%; height: 650px; border-radius: 10px;
+            background: repeating-linear-gradient(45deg, #f4f4f4, #f4f4f4 12px, #ececec 12px, #ececec 24px);
             border: 2px dashed #ccc; overflow: hidden; touch-action: none;
+        }
+        .theme-canvas-photo {
+            position: absolute; top: 0; left: 0; width: 100%; height: 260px;
+            background-size: cover; background-position: center; background-color: #ddd;
+            border-bottom: 2px dashed #ccc; box-sizing: border-box;
+        }
+        .theme-canvas-photo-label {
+            position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: #fff;
+            font-size: 0.75rem; padding: 3px 10px; border-radius: 4px; pointer-events: none;
         }
         .canvas-block {
             position: absolute; cursor: grab; border: 2px solid transparent; border-radius: 8px;
@@ -156,7 +168,7 @@
 <body>
 
     <header>
-        <h1 id="pageTitle">Mon Cerveau Numérique</h1>
+        <h1 id="pageTitle">Les bonnes idées du web</h1>
         <p class="subtitle">Toutes mes astuces du quotidien, triées et résumées par IA</p>
         <div class="search-container" id="searchContainer">
             <input type="text" id="searchInput" placeholder="Rechercher une astuce (ex: fuite, riz, soudure...)...">
@@ -169,6 +181,16 @@
             <h2 style="color: #856404; margin-top: 0;">🔧 Espace de validation des brouillons (Admin)</h2>
             <p>Voici les astuces envoyées par ton robot IA. Relis-les, modifie-les si besoin, puis valide-les pour les publier.</p>
             <div id="adminQueue"><!-- Rempli par JS --></div>
+
+            <h2 style="color: #856404; margin-top: 35px;">📚 Astuces déjà publiées (modifiables)</h2>
+            <p>Modifie le titre, la catégorie, l'image, le résumé ou le détail d'une astuce déjà en ligne, à tout moment.</p>
+            <div id="publishedQueue"><!-- Rempli par JS --></div>
+
+            <div class="theme-editor" style="margin-bottom:20px;">
+                <h3 style="margin-top: 0; color: #1e3c72;">🎨 Couleur du site (bandeau du haut)</h3>
+                <p>Choisis la couleur de fond de l'en-tête (titre + barre de recherche).</p>
+                <input type="color" id="headerColorPicker" value="#1e3c72" onchange="updateHeaderColor(this.value)">
+            </div>
 
             <div class="theme-editor">
                 <h3 style="margin-top: 0; color: #1e3c72;">🎨 Personnaliser les pages de thème</h3>
@@ -196,7 +218,7 @@
                 <button class="category-btn" onclick="filterCategory('philosophie')">Bonnes Pensées 🧠</button>
             </div>
 
-            <div class="theme-cover" id="themeCover"><div class="theme-cover-inner" id="themeCoverInner"></div></div>
+            <div class="theme-cover" id="themeCover"><div class="theme-cover-photo" id="themeCoverPhoto"></div><div class="theme-cover-inner" id="themeCoverInner"></div></div>
 
             <div class="grid" id="tipsGrid"></div>
         </div>
@@ -237,7 +259,7 @@
 
             if (hash === '#admin') {
                 if (adminPanel) adminPanel.classList.add('active');
-                if (pageTitle) pageTitle.innerText = "Mon Cerveau Numérique [ADMIN]";
+                if (pageTitle) pageTitle.innerText = "Les bonnes idées du web [ADMIN]";
                 if (listView) listView.style.display = '';
                 if (searchContainer) searchContainer.style.display = '';
                 if (astucePage) astucePage.classList.remove('active');
@@ -246,17 +268,39 @@
             } else if (hash.startsWith('#astuce-')) {
                 const id = hash.replace('#astuce-', '');
                 if (adminPanel) adminPanel.classList.remove('active');
-                if (pageTitle) pageTitle.innerText = "Mon Cerveau Numérique";
+                if (pageTitle) pageTitle.innerText = "Les bonnes idées du web";
                 if (listView) listView.style.display = 'none';
                 if (searchContainer) searchContainer.style.display = 'none';
                 renderAstucePage(id);
             } else {
                 if (adminPanel) adminPanel.classList.remove('active');
-                if (pageTitle) pageTitle.innerText = "Mon Cerveau Numérique";
+                if (pageTitle) pageTitle.innerText = "Les bonnes idées du web";
                 if (listView) listView.style.display = '';
                 if (searchContainer) searchContainer.style.display = '';
                 if (astucePage) astucePage.classList.remove('active');
             }
+        }
+
+        // Contenu éditable commun à une carte admin (brouillon ou astuce publiée)
+        function buildEditableFields(tip) {
+            return `
+                <div><strong>Titre proposé :</strong> <input type="text" class="admin-input" id="title-${tip.id}" value="${tip.title}"></div>
+                <div class="admin-source-link">🔗 <strong>Lien source :</strong> <a href="${tip.sourceUrl}" target="_blank" rel="noopener noreferrer">${tip.sourceUrl}</a></div>
+                <div>
+                    <strong>Catégorie / thème :</strong>
+                    <select class="admin-input" id="category-${tip.id}" onchange="toggleCustomCategory('${tip.id}')">
+                        ${buildCategoryOptions(tip)}
+                    </select>
+                    <input type="text" class="admin-input" id="customCategory-${tip.id}" placeholder="Nom de la nouvelle catégorie" style="display:none; margin-top:6px;">
+                </div>
+                <div>
+                    <strong>Image :</strong>
+                    <input type="text" class="admin-input" id="image-${tip.id}" placeholder="URL de l'image" value="${tip.image || ''}">
+                    ${tip.image ? `<img src="${tip.image}" alt="" style="max-height:100px; margin-top:6px; border-radius:6px; display:block;">` : '<p style="color:#999; font-size:0.85rem; margin:4px 0 0;">Aucune image pour le moment.</p>'}
+                </div>
+                <div><strong>Résumé court :</strong> <textarea class="admin-input" id="summary-${tip.id}">${tip.summary}</textarea></div>
+                <div><strong>Détail complet :</strong> <textarea class="admin-input" rows="3" id="detail-${tip.id}">${tip.fullDetail}</textarea></div>
+            `;
         }
 
         function renderAdminQueue() {
@@ -268,30 +312,49 @@
             
             if (brouillons.length === 0) {
                 queue.innerHTML = '<p style="color: #856404; font-weight: bold;">🎉 Aucun brouillon en attente de validation !</p>';
+            } else {
+                brouillons.forEach(tip => {
+                    const adminCard = document.createElement('div');
+                    adminCard.className = 'admin-card';
+                    adminCard.innerHTML = `
+                        ${buildEditableFields(tip)}
+                        <div class="admin-actions">
+                            <button class="btn-validate" onclick="validateTip('${tip.id}')">✅ Valider et Publier</button>
+                            <button class="btn-reject" onclick="deleteTip('${tip.id}')">❌ Supprimer</button>
+                        </div>
+                    `;
+                    queue.appendChild(adminCard);
+                });
+            }
+
+            renderPublishedList();
+        }
+
+        function renderPublishedList() {
+            const list = document.getElementById('publishedQueue');
+            if (!list) return;
+            list.innerHTML = '';
+
+            const published = astucesData.filter(tip => tip.status === 'valide');
+
+            if (published.length === 0) {
+                list.innerHTML = '<p style="color: #856404;">Aucune astuce publiée pour le moment.</p>';
                 return;
             }
 
-            brouillons.forEach(tip => {
+            published.forEach(tip => {
                 const adminCard = document.createElement('div');
                 adminCard.className = 'admin-card';
                 adminCard.innerHTML = `
-                    <div><strong>Titre proposé :</strong> <input type="text" class="admin-input" id="title-${tip.id}" value="${tip.title}"></div>
-                    <div class="admin-source-link">🔗 <strong>Lien source :</strong> <a href="${tip.sourceUrl}" target="_blank" rel="noopener noreferrer">${tip.sourceUrl}</a></div>
-                    <div>
-                        <strong>Catégorie / thème :</strong>
-                        <select class="admin-input" id="category-${tip.id}" onchange="toggleCustomCategory('${tip.id}')">
-                            ${buildCategoryOptions(tip)}
-                        </select>
-                        <input type="text" class="admin-input" id="customCategory-${tip.id}" placeholder="Nom de la nouvelle catégorie" style="display:none; margin-top:6px;">
-                    </div>
-                    <div><strong>Résumé court :</strong> <textarea class="admin-input" id="summary-${tip.id}">${tip.summary}</textarea></div>
-                    <div><strong>Détail complet :</strong> <textarea class="admin-input" rows="3" id="detail-${tip.id}">${tip.fullDetail}</textarea></div>
+                    ${buildEditableFields(tip)}
                     <div class="admin-actions">
-                        <button class="btn-validate" onclick="validateTip('${tip.id}')">✅ Valider et Publier</button>
+                        <button class="btn-validate" onclick="saveTip('${tip.id}')">💾 Enregistrer les modifications</button>
                         <button class="btn-reject" onclick="deleteTip('${tip.id}')">❌ Supprimer</button>
                     </div>
                 `;
-                queue.appendChild(adminCard);
+                list.appendChild(adminCard);
+            });
+        }
             });
         }
 
@@ -331,19 +394,51 @@
             } catch (error) {
                 console.error("Impossible de contacter l'API /api/themes :", error);
             } finally {
+                applyHeaderColor();
                 renderThemeCover(currentCategory);
                 if (window.location.hash === '#admin') renderAdminThemeEditor();
                 if (window.location.hash.startsWith('#astuce-')) handleRoute();
             }
         }
 
-        async function validateTip(id) {
-            const tip = astucesData.find(t => t.id === id);
-            if (!tip) return;
+        // Applique la couleur du bandeau du haut (en-tête) si elle a été personnalisée,
+        // et met à jour le sélecteur de couleur dans l'admin s'il est présent.
+        function applyHeaderColor() {
+            const couleur = themesData['tous'] && themesData['tous'].couleur;
+            if (couleur) {
+                document.documentElement.style.setProperty('--header-color', couleur);
+            }
+            const picker = document.getElementById('headerColorPicker');
+            if (picker) picker.value = couleur || '#1e3c72';
+        }
 
+        async function updateHeaderColor(color) {
+            const accueilTheme = themesData['tous'];
+            if (!accueilTheme || !accueilTheme.id) {
+                alert('Il faut d\'abord créer une ligne "Accueil" dans la table Airtable "Themes" pour pouvoir enregistrer cette couleur.');
+                return;
+            }
+            document.documentElement.style.setProperty('--header-color', color);
+            try {
+                const response = await fetch(`/api/themes?themeId=${encodeURIComponent(accueilTheme.id)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ couleur: color })
+                });
+                if (!response.ok) throw new Error(await parseErrorResponse(response));
+                accueilTheme.couleur = color;
+            } catch (error) {
+                alert(`Erreur lors de l'enregistrement de la couleur : ${error.message}`);
+            }
+        }
+
+        // Lit les champs édités d'une carte admin (brouillon ou astuce déjà publiée)
+        function readEditedFields(id) {
             const title = document.getElementById(`title-${id}`).value;
             const summary = document.getElementById(`summary-${id}`).value;
             const fullDetail = document.getElementById(`detail-${id}`).value;
+            const imageInput = document.getElementById(`image-${id}`);
+            const imageUrl = imageInput ? imageInput.value.trim() : '';
 
             const categorySelect = document.getElementById(`category-${id}`);
             let category = categorySelect ? categorySelect.value : undefined;
@@ -352,24 +447,56 @@
                 category = customInput ? customInput.value.trim() : '';
                 if (!category) {
                     alert('Merci de saisir un nom pour la nouvelle catégorie.');
-                    return;
+                    return null;
                 }
             }
+
+            return { title, summary, fullDetail, category, imageUrl };
+        }
+
+        async function validateTip(id) {
+            const tip = astucesData.find(t => t.id === id);
+            if (!tip) return;
+
+            const fields = readEditedFields(id);
+            if (!fields) return;
 
             try {
                 const response = await fetch(`/api/astuces?id=${encodeURIComponent(id)}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, summary, fullDetail, category, status: 'valide' })
+                    body: JSON.stringify({ ...fields, status: 'valide' })
                 });
                 if (!response.ok) {
                     const err = await response.json().catch(() => ({}));
                     throw new Error(err.error || 'Erreur inconnue');
                 }
-                alert(`L'astuce "${title}" a été validée !`);
+                alert(`L'astuce "${fields.title}" a été validée !`);
                 await loadAstuces();
             } catch (error) {
                 alert(`Erreur lors de la validation : ${error.message}`);
+            }
+        }
+
+        // Enregistre les modifications d'une astuce déjà publiée, sans changer son statut
+        async function saveTip(id) {
+            const fields = readEditedFields(id);
+            if (!fields) return;
+
+            try {
+                const response = await fetch(`/api/astuces?id=${encodeURIComponent(id)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...fields, status: 'valide' })
+                });
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error || 'Erreur inconnue');
+                }
+                alert(`Modifications enregistrées pour "${fields.title}" !`);
+                await loadAstuces();
+            } catch (error) {
+                alert(`Erreur lors de l'enregistrement : ${error.message}`);
             }
         }
 
@@ -453,18 +580,19 @@
 
         function renderThemeCover(cat) {
             const cover = document.getElementById('themeCover');
+            const photo = document.getElementById('themeCoverPhoto');
             const inner = document.getElementById('themeCoverInner');
             if (!cover || !inner) return;
 
             const theme = themesData[cat];
             if (cat === 'tous' || !theme || (!theme.background && (!theme.blocks || theme.blocks.length === 0))) {
                 cover.classList.remove('active');
-                cover.style.backgroundImage = '';
+                if (photo) photo.style.backgroundImage = '';
                 inner.innerHTML = '';
                 return;
             }
 
-            cover.style.backgroundImage = theme.background ? `url('${theme.background}')` : '';
+            if (photo) photo.style.backgroundImage = theme.background ? `url('${theme.background}')` : '';
             inner.innerHTML = (theme.blocks || []).map(block => {
                 const left = (block.posX !== undefined ? block.posX : 10);
                 const top = (block.posY !== undefined ? block.posY : 10);
@@ -644,8 +772,10 @@
                 <input type="file" accept="image/*" onchange="uploadThemeBackground('${theme.id}', this.files[0])">
 
                 <h4 style="margin-top: 25px;">Emplacement des éléments</h4>
-                <p class="theme-canvas-hint">Fais glisser chaque élément à l'endroit voulu sur l'aperçu ci-dessous (le fond d'écran y est visible pour t'aider à te repérer).</p>
-                <div class="theme-canvas" id="themeCanvas" style="${theme.background ? `background-image:url('${theme.background}')` : ''}">
+                <p class="theme-canvas-hint">Fais glisser chaque élément où tu veux sur toute la zone ci-dessous. La photo de présentation reste fixe en haut (📷) : évite de placer tes éléments dessus, place-les plutôt dans l'espace libre autour et en dessous.</p>
+                <div class="theme-canvas" id="themeCanvas">
+                    <div class="theme-canvas-photo" style="${theme.background ? `background-image:url('${theme.background}')` : ''}"></div>
+                    <div class="theme-canvas-photo-label">📷 Photo de présentation</div>
                     ${canvasBlocksHtml}
                 </div>
 
