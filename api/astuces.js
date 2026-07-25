@@ -57,6 +57,7 @@ module.exports = async function handler(req, res) {
           title: rec.fields['Titre'] || '',
           category: cat.key,
           categoryLabel: cat.label,
+          categoryRaw: rec.fields['Catégorie'] || '',
           summary: rec.fields['Résumé'] || '',
           fullDetail: rec.fields['Détail complet'] || '',
           sourceUrl: rec.fields['Source URL'] || '',
@@ -76,9 +77,10 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: 'title et sourceUrl sont obligatoires' });
       }
 
-      // Si la catégorie envoyée par l'IA ne correspond à aucune catégorie Airtable connue,
-      // on retombe sur "Bonnes Pensées" pour éviter une erreur Airtable (champ select strict).
-      const category = VALID_CATEGORIES.includes(body.category) ? body.category : 'Bonnes Pensées';
+      // On garde la catégorie proposée par l'IA telle quelle. Si elle ne correspond à
+      // aucune catégorie Airtable existante, "typecast" ci-dessous demande à Airtable
+      // de créer automatiquement la nouvelle option (au lieu de renvoyer une erreur).
+      const category = body.category || 'Bonnes Pensées';
 
       const fields = {
         'Titre': body.title,
@@ -96,7 +98,7 @@ module.exports = async function handler(req, res) {
       const r = await fetch(AIRTABLE_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ fields })
+        body: JSON.stringify({ fields, typecast: true })
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error?.message || 'Erreur Airtable (création)');
@@ -114,12 +116,13 @@ module.exports = async function handler(req, res) {
       if (body.title !== undefined) fields['Titre'] = body.title;
       if (body.summary !== undefined) fields['Résumé'] = body.summary;
       if (body.fullDetail !== undefined) fields['Détail complet'] = body.fullDetail;
+      if (body.category !== undefined && body.category !== '') fields['Catégorie'] = body.category;
       if (body.status !== undefined) fields['Statut'] = body.status === 'valide' ? 'Validé' : 'Brouillon';
 
       const r = await fetch(`${AIRTABLE_URL}/${id}`, {
         method: 'PATCH',
         headers,
-        body: JSON.stringify({ fields })
+        body: JSON.stringify({ fields, typecast: true })
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error?.message || 'Erreur Airtable (écriture)');
