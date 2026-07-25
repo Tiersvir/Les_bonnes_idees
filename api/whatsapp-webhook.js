@@ -122,7 +122,7 @@ async function extractSourceInfo(url) {
 
     const title = extractMeta(html, 'og:title') || extractTitleTag(html);
     const description = extractMeta(html, 'og:description') || extractMeta(html, 'description');
-    const image = extractMeta(html, 'og:image');
+    const image = extractMeta(html, 'og:image') || extractMeta(html, 'twitter:image') || extractFirstImage(html, url);
     const author = extractMeta(html, 'og:site_name');
 
     return { platform: 'générique', title, author, thumbnail: image, description };
@@ -148,6 +148,26 @@ function extractMeta(html, property) {
 function extractTitleTag(html) {
   const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
   return m ? decodeHtmlEntities(m[1]) : null;
+}
+
+// Dernier recours : la première balise <img> avec une source exploitable trouvée dans la page.
+function extractFirstImage(html, pageUrl) {
+  const matches = html.match(/<img[^>]+src=["']([^"']+)["']/gi);
+  if (!matches) return null;
+  for (const tag of matches) {
+    const m = tag.match(/src=["']([^"']+)["']/i);
+    if (!m) continue;
+    let src = m[1];
+    if (src.startsWith('data:')) continue; // images encodées inline, inutilisables telles quelles
+    try {
+      // Gère les URLs relatives (ex: "/images/photo.jpg") en les complétant avec le domaine
+      src = new URL(src, pageUrl).href;
+    } catch (e) {
+      continue;
+    }
+    return src;
+  }
+  return null;
 }
 
 function decodeHtmlEntities(str) {
