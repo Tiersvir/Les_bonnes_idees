@@ -25,6 +25,12 @@ function mapCategory(rawLabel) {
   return { key: (rawLabel || '').toLowerCase(), label: rawLabel || 'Autre' };
 }
 
+function checkAdminPassword(req) {
+  const expected = process.env.ADMIN_PASSWORD;
+  const provided = req.headers['x-admin-password'];
+  return Boolean(expected) && provided === expected;
+}
+
 module.exports = async function handler(req, res) {
   const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
   if (!AIRTABLE_API_KEY) {
@@ -108,6 +114,9 @@ module.exports = async function handler(req, res) {
 
     // --- MODIFIER / VALIDER UNE ASTUCE ---
     if (req.method === 'PATCH') {
+      if (!checkAdminPassword(req)) {
+        return res.status(401).json({ error: 'Mot de passe admin incorrect ou manquant' });
+      }
       const id = req.query.id;
       if (!id) return res.status(400).json({ error: 'id manquant' });
 
@@ -133,6 +142,9 @@ module.exports = async function handler(req, res) {
 
     // --- SUPPRIMER UN BROUILLON REFUSÉ ---
     if (req.method === 'DELETE') {
+      if (!checkAdminPassword(req)) {
+        return res.status(401).json({ error: 'Mot de passe admin incorrect ou manquant' });
+      }
       const id = req.query.id;
       if (!id) return res.status(400).json({ error: 'id manquant' });
 
