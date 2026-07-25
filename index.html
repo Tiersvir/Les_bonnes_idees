@@ -267,6 +267,13 @@
                 adminCard.className = 'admin-card';
                 adminCard.innerHTML = `
                     <div><strong>Titre proposé :</strong> <input type="text" class="admin-input" id="title-${tip.id}" value="${tip.title}"></div>
+                    <div>
+                        <strong>Catégorie / thème :</strong>
+                        <select class="admin-input" id="category-${tip.id}" onchange="toggleCustomCategory('${tip.id}')">
+                            ${buildCategoryOptions(tip)}
+                        </select>
+                        <input type="text" class="admin-input" id="customCategory-${tip.id}" placeholder="Nom de la nouvelle catégorie" style="display:none; margin-top:6px;">
+                    </div>
                     <div><strong>Résumé court :</strong> <textarea class="admin-input" id="summary-${tip.id}">${tip.summary}</textarea></div>
                     <div><strong>Détail complet :</strong> <textarea class="admin-input" rows="3" id="detail-${tip.id}">${tip.fullDetail}</textarea></div>
                     <div class="admin-actions">
@@ -276,6 +283,31 @@
                 `;
                 queue.appendChild(adminCard);
             });
+        }
+
+        // Catégories connues (doit correspondre à la liste utilisée côté webhook WhatsApp)
+        const KNOWN_CATEGORIES = ['Plomberie', 'Électronique', 'Informatique', 'Impression 3D', 'Cuisine', 'Bonnes Pensées'];
+
+        function buildCategoryOptions(tip) {
+            const current = tip.categoryRaw || '';
+            const options = [...KNOWN_CATEGORIES];
+            // Si l'IA a proposé une catégorie inédite, on l'ajoute en haut de la liste
+            // pour que l'admin la voie et puisse la garder telle quelle.
+            if (current && !options.includes(current)) {
+                options.unshift(current);
+            }
+            let html = options.map(cat =>
+                `<option value="${cat}" ${cat === current ? 'selected' : ''}>${cat}${!KNOWN_CATEGORIES.includes(cat) ? ' (nouveau, proposé par l\'IA)' : ''}</option>`
+            ).join('');
+            html += `<option value="__custom__">➕ Nouvelle catégorie...</option>`;
+            return html;
+        }
+
+        function toggleCustomCategory(id) {
+            const select = document.getElementById(`category-${id}`);
+            const input = document.getElementById(`customCategory-${id}`);
+            if (!select || !input) return;
+            input.style.display = select.value === '__custom__' ? 'block' : 'none';
         }
 
         async function loadThemes() {
@@ -303,11 +335,22 @@
             const summary = document.getElementById(`summary-${id}`).value;
             const fullDetail = document.getElementById(`detail-${id}`).value;
 
+            const categorySelect = document.getElementById(`category-${id}`);
+            let category = categorySelect ? categorySelect.value : undefined;
+            if (category === '__custom__') {
+                const customInput = document.getElementById(`customCategory-${id}`);
+                category = customInput ? customInput.value.trim() : '';
+                if (!category) {
+                    alert('Merci de saisir un nom pour la nouvelle catégorie.');
+                    return;
+                }
+            }
+
             try {
                 const response = await fetch(`/api/astuces?id=${encodeURIComponent(id)}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, summary, fullDetail, status: 'valide' })
+                    body: JSON.stringify({ title, summary, fullDetail, category, status: 'valide' })
                 });
                 if (!response.ok) {
                     const err = await response.json().catch(() => ({}));
