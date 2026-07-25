@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@vercel/functions": "^1.6.0"
+  }
+}
