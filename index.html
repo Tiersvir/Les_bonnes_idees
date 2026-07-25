@@ -44,72 +44,16 @@
         .card-title { margin: 0 0 10px 0; font-size: 1.2rem; color: #1e3c72; }
         .card-desc { font-size: 0.9rem; color: #666; line-height: 1.4; }
         
-        /* Page de couverture d'un thème (au-dessus de la grille) */
-        .theme-cover {
-            display: none; border-radius: 16px; margin-bottom: 30px; overflow: hidden;
-            background-color: #e9ecef; position: relative; min-height: 650px;
+        /* Onglets admin (Nouvelles / Publiées) */
+        .admin-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .admin-tab {
+            background: #f4f7f6; border: 2px solid transparent; padding: 10px 20px;
+            border-radius: 30px; cursor: pointer; font-size: 1rem; font-weight: bold; color: #555;
         }
-        .theme-cover.active { display: block; }
-        .theme-cover-photo {
-            position: absolute; top: 0; left: 0; width: 100%; height: 260px;
-            background-size: cover; background-position: center; border-radius: 16px 16px 0 0;
-        }
-        .theme-cover-inner { position: relative; width: 100%; min-height: 650px; }
-        .theme-block-text {
-            position: absolute; line-height: 1.6; color: #333; white-space: pre-line; font-size: 1rem;
-            background: rgba(255,255,255,0.92); padding: 14px 18px; border-radius: 10px; box-sizing: border-box;
-        }
-        .theme-block-image { position: absolute; border-radius: 10px; box-sizing: border-box; display: block; }
-        .theme-block-image img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block; }
+        .admin-tab.active { background: #2a5298; color: white; }
 
         /* Éditeur de thèmes (admin) */
         .theme-editor { background: #fff9e6; border: 1px solid #ffe08a; border-radius: 12px; padding: 20px; margin-top: 25px; }
-        .theme-editor select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 15px; }
-        .theme-editor-bg-preview {
-            width: 100%; height: 140px; border-radius: 10px; background-size: cover; background-position: center;
-            background-color: #ddd; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; color: #888;
-        }
-        .theme-block-card { background: white; border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 12px; }
-        .theme-block-card textarea { width: 100%; min-height: 70px; padding: 8px; border-radius: 6px; border: 1px solid #ddd; font-family: inherit; box-sizing: border-box; }
-        .theme-block-card img { max-width: 100%; max-height: 160px; border-radius: 6px; display: block; margin-bottom: 8px; }
-        .theme-block-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
-        .theme-block-actions button {
-            border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
-        }
-        .btn-save-block { background: #2a5298; color: white; }
-        .btn-delete-block { background: #dc3545; color: white; }
-        .add-block-buttons { margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
-        .add-block-buttons button { background: #28a745; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-        .add-block-buttons label { background: #17a2b8; color: white; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-
-        /* Canevas de positionnement libre (glisser-déposer) */
-        .theme-canvas-hint { font-size: 0.85rem; color: #666; margin: 10px 0; }
-        .theme-canvas {
-            position: relative; width: 100%; height: 650px; border-radius: 10px;
-            background: repeating-linear-gradient(45deg, #f4f4f4, #f4f4f4 12px, #ececec 12px, #ececec 24px);
-            border: 2px dashed #ccc; overflow: hidden; touch-action: none;
-        }
-        .theme-canvas-photo {
-            position: absolute; top: 0; left: 0; width: 100%; height: 260px;
-            background-size: cover; background-position: center; background-color: #ddd;
-            border-bottom: 2px dashed #ccc; box-sizing: border-box;
-        }
-        .theme-canvas-photo-label {
-            position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: #fff;
-            font-size: 0.75rem; padding: 3px 10px; border-radius: 4px; pointer-events: none;
-        }
-        .canvas-block {
-            position: absolute; cursor: grab; border: 2px solid transparent; border-radius: 8px;
-            box-sizing: border-box; user-select: none;
-        }
-        .canvas-block:hover { border-color: #2a5298; }
-        .canvas-block.dragging { cursor: grabbing; border-color: #2a5298; opacity: 0.85; z-index: 50; }
-        .canvas-text-preview {
-            background: rgba(255,255,255,0.92); padding: 8px 12px; border-radius: 8px;
-            font-size: 0.85rem; color: #333; max-height: 100px; overflow: hidden;
-        }
-        .canvas-block img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; display: block; }
-        .canvas-placeholder { background: rgba(255,255,255,0.92); padding: 20px; text-align: center; border-radius: 8px; color: #999; }
         .astuce-page { display: none; max-width: 800px; margin: 0 auto; background-size: cover; background-position: center; border-radius: 16px; }
         .astuce-page.active { display: block; padding: 20px; }
         .back-btn {
@@ -159,10 +103,6 @@
             padding: 6px 10px; border-radius: 4px; border: 1px solid #eee;
         }
         .admin-source-link a { color: #2a5298; }
-        .btn-fullpage {
-            background: #6f42c1; color: white; border: none; padding: 6px 12px;
-            border-radius: 6px; cursor: pointer; font-size: 0.85rem;
-        }
     </style>
 </head>
 <body>
@@ -178,32 +118,41 @@
     <div class="main-container">
         <!-- Zone Admin Masquée par défaut -->
         <div class="admin-panel" id="adminPanel">
-            <h2 style="color: #856404; margin-top: 0;">🔧 Espace de validation des brouillons (Admin)</h2>
-            <p>Voici les astuces envoyées par ton robot IA. Relis-les, modifie-les si besoin, puis valide-les pour les publier.</p>
-            <div id="adminQueue"><!-- Rempli par JS --></div>
+            <h2 style="color: #856404; margin-top: 0;">🔧 Espace de validation (Admin)</h2>
 
-            <h2 style="color: #856404; margin-top: 35px;">📚 Astuces déjà publiées (modifiables)</h2>
-            <p>Modifie le titre, la catégorie, l'image, le résumé ou le détail d'une astuce déjà en ligne, à tout moment.</p>
-            <div id="publishedQueue"><!-- Rempli par JS --></div>
-
-            <div class="theme-editor" style="margin-bottom:20px;">
-                <h3 style="margin-top: 0; color: #1e3c72;">🎨 Couleur du site (bandeau du haut)</h3>
-                <p>Choisis la couleur de fond de l'en-tête (titre + barre de recherche).</p>
-                <input type="color" id="headerColorPicker" value="#1e3c72" onchange="updateHeaderColor(this.value)">
+            <div class="admin-tabs">
+                <button class="admin-tab active" id="tabBtnBrouillons" onclick="switchAdminTab('brouillons')">🆕 Nouvelles</button>
+                <button class="admin-tab" id="tabBtnPubliees" onclick="switchAdminTab('publiees')">📚 Publiées</button>
             </div>
 
-            <div class="theme-editor">
-                <h3 style="margin-top: 0; color: #1e3c72;">🎨 Personnaliser les pages de thème</h3>
-                <p>Choisis un thème pour ajouter un fond d'écran, du texte ou des images sur sa page.</p>
-                <select id="themeSelector" onchange="renderAdminThemeEditor()">
-                    <option value="plomberie">Plomberie 🔧</option>
-                    <option value="electronique">Électronique ⚡</option>
-                    <option value="informatique">Informatique 💻</option>
-                    <option value="impression 3d">Impression 3D 🖨️</option>
-                    <option value="cuisine">Cuisine 🍳</option>
-                    <option value="philosophie">Bonnes Pensées 🧠</option>
-                </select>
-                <div id="themeEditorBody"><!-- Rempli par JS --></div>
+            <div id="tabContentBrouillons" class="admin-tab-content">
+                <p>Voici les astuces envoyées par ton robot IA. Relis-les, modifie-les si besoin, puis valide-les pour les publier.</p>
+                <div id="adminQueue"><!-- Rempli par JS --></div>
+            </div>
+
+            <div id="tabContentPubliees" class="admin-tab-content" style="display:none;">
+                <p>Modifie le titre, la catégorie, l'image, le résumé ou le détail d'une astuce déjà en ligne, à tout moment.</p>
+                <div id="publishedQueue"><!-- Rempli par JS --></div>
+            </div>
+
+            <div class="theme-editor" style="margin-top:30px;">
+                <h3 style="margin-top: 0; color: #1e3c72;">🎨 Apparence du site</h3>
+
+                <p style="margin-bottom:6px;"><strong>Bandeau du haut (en-tête) :</strong></p>
+                <label style="display:block; margin-bottom:6px;">Couleur :
+                    <input type="color" id="headerColorPicker" value="#1e3c72" onchange="updateSiteAppearance('couleur', this.value)">
+                </label>
+                <label style="display:block; margin-bottom:18px;">Ou une image (URL) :
+                    <input type="text" class="admin-input" id="headerImageInput" placeholder="https://... (laisser vide pour utiliser la couleur)" onchange="updateSiteAppearance('imageEntete', this.value)">
+                </label>
+
+                <p style="margin-bottom:6px;"><strong>Fond de la page (en dessous du bandeau) :</strong></p>
+                <label style="display:block; margin-bottom:6px;">Couleur :
+                    <input type="color" id="pageColorPicker" value="#f4f7f6" onchange="updateSiteAppearance('couleurFondPage', this.value)">
+                </label>
+                <label style="display:block;">Ou une image (URL) :
+                    <input type="text" class="admin-input" id="pageImageInput" placeholder="https://... (laisser vide pour utiliser la couleur)" onchange="updateSiteAppearance('imageFondPage', this.value)">
+                </label>
             </div>
         </div>
 
@@ -218,7 +167,6 @@
                 <button class="category-btn" onclick="filterCategory('philosophie')">Bonnes Pensées 🧠</button>
             </div>
 
-            <div class="theme-cover" id="themeCover"><div class="theme-cover-photo" id="themeCoverPhoto"></div><div class="theme-cover-inner" id="themeCoverInner"></div></div>
 
             <div class="grid" id="tipsGrid"></div>
         </div>
@@ -231,6 +179,43 @@
         let astucesData = [];
         let themesData = {};
         let currentCategory = 'tous';
+        let adminPassword = sessionStorage.getItem('adminPassword') || '';
+
+        // Demande le mot de passe admin une seule fois par session de navigation
+        function ensureAdminPassword() {
+            if (!adminPassword) {
+                adminPassword = prompt('Mot de passe admin :') || '';
+                sessionStorage.setItem('adminPassword', adminPassword);
+            }
+            return adminPassword;
+        }
+
+        // Comme fetch(), mais ajoute le mot de passe admin et gère le cas où il est incorrect
+        async function adminFetch(url, options = {}) {
+            ensureAdminPassword();
+            const headers = Object.assign({}, options.headers, { 'x-admin-password': adminPassword });
+            const response = await fetch(url, { ...options, headers });
+            if (response.status === 401) {
+                alert('Mot de passe admin incorrect. Réessaie.');
+                sessionStorage.removeItem('adminPassword');
+                adminPassword = '';
+            }
+            return response;
+        }
+
+        function switchAdminTab(tab) {
+            const brouillonsBtn = document.getElementById('tabBtnBrouillons');
+            const publieesBtn = document.getElementById('tabBtnPubliees');
+            const brouillonsContent = document.getElementById('tabContentBrouillons');
+            const publieesContent = document.getElementById('tabContentPubliees');
+            if (!brouillonsBtn || !publieesBtn || !brouillonsContent || !publieesContent) return;
+
+            const showBrouillons = tab === 'brouillons';
+            brouillonsBtn.classList.toggle('active', showBrouillons);
+            publieesBtn.classList.toggle('active', !showBrouillons);
+            brouillonsContent.style.display = showBrouillons ? '' : 'none';
+            publieesContent.style.display = showBrouillons ? 'none' : '';
+        }
 
         async function loadAstuces() {
             try {
@@ -258,13 +243,14 @@
             const searchContainer = document.getElementById('searchContainer');
 
             if (hash === '#admin') {
+                ensureAdminPassword();
                 if (adminPanel) adminPanel.classList.add('active');
                 if (pageTitle) pageTitle.innerText = "Les bonnes idées du web [ADMIN]";
                 if (listView) listView.style.display = '';
                 if (searchContainer) searchContainer.style.display = '';
                 if (astucePage) astucePage.classList.remove('active');
                 renderAdminQueue();
-                renderAdminThemeEditor();
+                applySiteAppearance();
             } else if (hash.startsWith('#astuce-')) {
                 const id = hash.replace('#astuce-', '');
                 if (adminPanel) adminPanel.classList.remove('active');
@@ -392,41 +378,63 @@
             } catch (error) {
                 console.error("Impossible de contacter l'API /api/themes :", error);
             } finally {
-                applyHeaderColor();
-                renderThemeCover(currentCategory);
-                if (window.location.hash === '#admin') renderAdminThemeEditor();
+                applySiteAppearance();
                 if (window.location.hash.startsWith('#astuce-')) handleRoute();
             }
         }
 
-        // Applique la couleur du bandeau du haut (en-tête) si elle a été personnalisée,
-        // et met à jour le sélecteur de couleur dans l'admin s'il est présent.
-        function applyHeaderColor() {
-            const couleur = themesData['tous'] && themesData['tous'].couleur;
-            if (couleur) {
-                document.documentElement.style.setProperty('--header-color', couleur);
+        // Applique l'apparence personnalisée du site (en-tête + fond de page, couleur ou image)
+        // et met à jour les champs correspondants dans l'admin s'ils sont présents.
+        function applySiteAppearance() {
+            const accueil = themesData['tous'] || {};
+
+            const header = document.querySelector('header');
+            if (header) {
+                if (accueil.imageEntete) {
+                    header.style.background = `url('${accueil.imageEntete}') center/cover`;
+                } else if (accueil.couleur) {
+                    header.style.background = accueil.couleur;
+                } else {
+                    header.style.background = '';
+                }
             }
-            const picker = document.getElementById('headerColorPicker');
-            if (picker) picker.value = couleur || '#1e3c72';
+
+            if (accueil.imageFondPage) {
+                document.body.style.background = `url('${accueil.imageFondPage}') center/cover fixed`;
+            } else if (accueil.couleurFondPage) {
+                document.body.style.background = accueil.couleurFondPage;
+            } else {
+                document.body.style.background = '';
+            }
+
+            const headerColorPicker = document.getElementById('headerColorPicker');
+            if (headerColorPicker) headerColorPicker.value = accueil.couleur || '#1e3c72';
+            const headerImageInput = document.getElementById('headerImageInput');
+            if (headerImageInput) headerImageInput.value = accueil.imageEntete || '';
+            const pageColorPicker = document.getElementById('pageColorPicker');
+            if (pageColorPicker) pageColorPicker.value = accueil.couleurFondPage || '#f4f7f6';
+            const pageImageInput = document.getElementById('pageImageInput');
+            if (pageImageInput) pageImageInput.value = accueil.imageFondPage || '';
         }
 
-        async function updateHeaderColor(color) {
+        // champ : 'couleur' | 'imageEntete' | 'couleurFondPage' | 'imageFondPage'
+        async function updateSiteAppearance(champ, valeur) {
             const accueilTheme = themesData['tous'];
             if (!accueilTheme || !accueilTheme.id) {
-                alert('Il faut d\'abord créer une ligne "Accueil" dans la table Airtable "Themes" pour pouvoir enregistrer cette couleur.');
+                alert('Il faut d\'abord créer une ligne "Accueil" dans la table Airtable "Themes" pour pouvoir enregistrer cette apparence.');
                 return;
             }
-            document.documentElement.style.setProperty('--header-color', color);
             try {
-                const response = await fetch(`/api/themes?themeId=${encodeURIComponent(accueilTheme.id)}`, {
+                const response = await adminFetch(`/api/themes?themeId=${encodeURIComponent(accueilTheme.id)}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ couleur: color })
+                    body: JSON.stringify({ [champ]: valeur })
                 });
                 if (!response.ok) throw new Error(await parseErrorResponse(response));
-                accueilTheme.couleur = color;
+                accueilTheme[champ] = valeur;
+                applySiteAppearance();
             } catch (error) {
-                alert(`Erreur lors de l'enregistrement de la couleur : ${error.message}`);
+                alert(`Erreur lors de l'enregistrement : ${error.message}`);
             }
         }
 
@@ -460,7 +468,7 @@
             if (!fields) return;
 
             try {
-                const response = await fetch(`/api/astuces?id=${encodeURIComponent(id)}`, {
+                const response = await adminFetch(`/api/astuces?id=${encodeURIComponent(id)}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ...fields, status: 'valide' })
@@ -482,7 +490,7 @@
             if (!fields) return;
 
             try {
-                const response = await fetch(`/api/astuces?id=${encodeURIComponent(id)}`, {
+                const response = await adminFetch(`/api/astuces?id=${encodeURIComponent(id)}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ...fields, status: 'valide' })
@@ -502,7 +510,7 @@
             if (!confirm("Supprimer définitivement ce brouillon ?")) return;
 
             try {
-                const response = await fetch(`/api/astuces?id=${encodeURIComponent(id)}`, {
+                const response = await adminFetch(`/api/astuces?id=${encodeURIComponent(id)}`, {
                     method: 'DELETE'
                 });
                 if (!response.ok) {
@@ -567,44 +575,6 @@
                 return matchesCategory && matchesSearch;
             });
             renderGrid(filtered);
-            renderThemeCover(currentCategory);
-        }
-
-        // Calcule la hauteur d'un bloc image : 60% de sa largeur normalement,
-        // mais 100% (pleine hauteur) si le bloc est réglé en largeur 100% ("pleine page").
-        function imageBlockHeight(width) {
-            return width >= 100 ? '100%' : (width * 0.6) + '%';
-        }
-
-        function renderThemeCover(cat) {
-            const cover = document.getElementById('themeCover');
-            const photo = document.getElementById('themeCoverPhoto');
-            const inner = document.getElementById('themeCoverInner');
-            if (!cover || !inner) return;
-
-            const theme = themesData[cat];
-            if (cat === 'tous' || !theme || (!theme.background && (!theme.blocks || theme.blocks.length === 0))) {
-                cover.classList.remove('active');
-                if (photo) photo.style.backgroundImage = '';
-                inner.innerHTML = '';
-                return;
-            }
-
-            if (photo) photo.style.backgroundImage = theme.background ? `url('${theme.background}')` : '';
-            inner.innerHTML = (theme.blocks || []).map(block => {
-                const left = (block.posX !== undefined ? block.posX : 10);
-                const top = (block.posY !== undefined ? block.posY : 10);
-                const width = (block.largeur !== undefined ? block.largeur : 40);
-                const style = `left:${left}%; top:${top}%; width:${width}%;`;
-                if (block.type === 'Image' && block.image) {
-                    return `<div class="theme-block-image" style="${style} height:${imageBlockHeight(width)};"><img src="${block.image}" alt=""></div>`;
-                }
-                if (block.type === 'Texte' && block.texte) {
-                    return `<div class="theme-block-text" style="${style}">${block.texte}</div>`;
-                }
-                return '';
-            }).join('');
-            cover.classList.add('active');
         }
 
         function renderAstucePage(id) {
@@ -648,340 +618,12 @@
             window.location.hash = '';
         }
 
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-
-        // Réduit et compresse une image côté navigateur avant envoi, pour éviter
-        // les erreurs "fichier trop volumineux" avec les photos de téléphone.
-        function resizeImage(file, maxDim = 1600, quality = 0.82) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        let { width, height } = img;
-                        if (width > maxDim || height > maxDim) {
-                            if (width > height) {
-                                height = Math.round(height * (maxDim / width));
-                                width = maxDim;
-                            } else {
-                                width = Math.round(width * (maxDim / height));
-                                height = maxDim;
-                            }
-                        }
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
-                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                        canvas.toBlob((blob) => {
-                            if (!blob) { resolve(file); return; }
-                            resolve(new File([blob], (file.name || 'image').replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }));
-                        }, 'image/jpeg', quality);
-                    };
-                    img.onerror = () => resolve(file);
-                    img.src = e.target.result;
-                };
-                reader.onerror = () => resolve(file);
-                reader.readAsDataURL(file);
-            });
-        }
-
         async function parseErrorResponse(response) {
             try {
                 const data = await response.json();
                 return data.error || `Erreur ${response.status}`;
             } catch (e) {
                 return `Erreur serveur (${response.status}). Le fichier envoyé est peut-être trop volumineux.`;
-            }
-        }
-
-        function renderAdminThemeEditor() {
-            const body = document.getElementById('themeEditorBody');
-            const selector = document.getElementById('themeSelector');
-            if (!body || !selector) return;
-
-            const key = selector.value;
-            const theme = themesData[key];
-
-            if (!theme) {
-                body.innerHTML = '<p>Chargement du thème...</p>';
-                return;
-            }
-
-            const canvasBlocksHtml = (theme.blocks || []).map(block => {
-                const left = (block.posX !== undefined ? block.posX : 10);
-                const top = (block.posY !== undefined ? block.posY : 10);
-                const width = (block.largeur !== undefined ? block.largeur : 40);
-                const style = `left:${left}%; top:${top}%; width:${width}%; height:${block.type === 'Image' ? imageBlockHeight(width) : 'auto'};`;
-                const inner = block.type === 'Image'
-                    ? (block.image ? `<img src="${block.image}" alt="">` : '<div class="canvas-placeholder">🖼️ image</div>')
-                    : `<div class="canvas-text-preview">${(block.texte || 'texte vide').slice(0, 80)}</div>`;
-                return `<div class="canvas-block" data-id="${block.id}" style="${style}">${inner}</div>`;
-            }).join('');
-
-            const editPanelsHtml = (theme.blocks || []).map(block => {
-                if (block.type === 'Image') {
-                    return `
-                        <div class="theme-block-card">
-                            <strong>🖼️ Bloc image</strong>
-                            ${block.image ? `<img src="${block.image}">` : '<p style="color:#999;">Aucune image envoyée.</p>'}
-                            <input type="file" accept="image/*" onchange="uploadExistingBlockImage('${block.id}', this.files[0])">
-                            <div class="theme-block-actions">
-                                <label>Largeur :
-                                    <input type="range" min="15" max="100" value="${block.largeur !== undefined ? block.largeur : 40}"
-                                        oninput="this.nextElementSibling.textContent = this.value + '%'"
-                                        onchange="updateBlockSize('${block.id}', this.value)">
-                                </label>
-                                <span>${block.largeur !== undefined ? block.largeur : 40}%</span>
-                                <button class="btn-fullpage" onclick="makeFullPage('${block.id}')">🖼️ Pleine page</button>
-                                <button class="btn-delete-block" onclick="deleteBlock('${block.id}')">❌ Supprimer</button>
-                            </div>
-                        </div>
-                    `;
-                }
-                return `
-                    <div class="theme-block-card">
-                        <strong>📝 Bloc texte</strong>
-                        <textarea id="blockText-${block.id}">${block.texte || ''}</textarea>
-                        <div class="theme-block-actions">
-                            <button class="btn-save-block" onclick="saveBlockText('${block.id}')">💾 Enregistrer le texte</button>
-                            <label>Largeur :
-                                <input type="range" min="15" max="100" value="${block.largeur !== undefined ? block.largeur : 35}"
-                                    oninput="this.nextElementSibling.textContent = this.value + '%'"
-                                    onchange="updateBlockSize('${block.id}', this.value)">
-                            </label>
-                            <span>${block.largeur !== undefined ? block.largeur : 35}%</span>
-                            <button class="btn-delete-block" onclick="deleteBlock('${block.id}')">❌ Supprimer</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            body.innerHTML = `
-                <div class="theme-editor-bg-preview" style="${theme.background ? `background-image:url('${theme.background}')` : ''}">
-                    ${theme.background ? '' : "Aucun fond d'écran pour le moment"}
-                </div>
-                <input type="file" accept="image/*" onchange="uploadThemeBackground('${theme.id}', this.files[0])">
-
-                <h4 style="margin-top: 25px;">Emplacement des éléments</h4>
-                <p class="theme-canvas-hint">Fais glisser chaque élément où tu veux sur toute la zone ci-dessous. La photo de présentation reste fixe en haut (📷) : évite de placer tes éléments dessus, place-les plutôt dans l'espace libre autour et en dessous.</p>
-                <div class="theme-canvas" id="themeCanvas">
-                    <div class="theme-canvas-photo" style="${theme.background ? `background-image:url('${theme.background}')` : ''}"></div>
-                    <div class="theme-canvas-photo-label">📷 Photo de présentation</div>
-                    ${canvasBlocksHtml}
-                </div>
-
-                <h4 style="margin-top: 25px;">Contenu des blocs</h4>
-                ${editPanelsHtml || '<p style="color:#999;">Aucun bloc pour le moment.</p>'}
-
-                <div class="add-block-buttons">
-                    <button onclick="addTextBlock('${theme.id}', '${key}')">➕ Ajouter un bloc texte</button>
-                    <label>➕ Ajouter un bloc image
-                        <input type="file" accept="image/*" style="display:none" onchange="addImageBlock('${theme.id}', '${key}', this.files[0])">
-                    </label>
-                </div>
-            `;
-
-            setupCanvasDragging(key);
-        }
-
-        function setupCanvasDragging(themeKey) {
-            const canvas = document.getElementById('themeCanvas');
-            if (!canvas) return;
-
-            let dragEl = null;
-            let startClientX = 0, startClientY = 0, startLeftPct = 0, startTopPct = 0;
-
-            canvas.querySelectorAll('.canvas-block').forEach(el => {
-                el.addEventListener('pointerdown', (e) => {
-                    dragEl = el;
-                    el.classList.add('dragging');
-                    el.setPointerCapture(e.pointerId);
-                    startClientX = e.clientX;
-                    startClientY = e.clientY;
-                    startLeftPct = parseFloat(el.style.left) || 0;
-                    startTopPct = parseFloat(el.style.top) || 0;
-                    e.preventDefault();
-                });
-            });
-
-            canvas.addEventListener('pointermove', (e) => {
-                if (!dragEl) return;
-                const rect = canvas.getBoundingClientRect();
-                const dxPct = ((e.clientX - startClientX) / rect.width) * 100;
-                const dyPct = ((e.clientY - startClientY) / rect.height) * 100;
-                const newLeft = Math.min(95, Math.max(0, startLeftPct + dxPct));
-                const newTop = Math.min(95, Math.max(0, startTopPct + dyPct));
-                dragEl.style.left = newLeft + '%';
-                dragEl.style.top = newTop + '%';
-            });
-
-            canvas.addEventListener('pointerup', async (e) => {
-                if (!dragEl) return;
-                const el = dragEl;
-                dragEl = null;
-                el.classList.remove('dragging');
-
-                const blockId = el.dataset.id;
-                const posX = Math.round(parseFloat(el.style.left) * 10) / 10;
-                const posY = Math.round(parseFloat(el.style.top) * 10) / 10;
-
-                try {
-                    const response = await fetch(`/api/themes?blockId=${encodeURIComponent(blockId)}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ posX, posY })
-                    });
-                    if (!response.ok) throw new Error(await parseErrorResponse(response));
-                    await loadThemes();
-                } catch (error) {
-                    alert(`Erreur lors du déplacement : ${error.message}`);
-                    renderAdminThemeEditor();
-                }
-            });
-        }
-
-        async function updateBlockSize(blockId, value) {
-            try {
-                const response = await fetch(`/api/themes?blockId=${encodeURIComponent(blockId)}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ largeur: parseFloat(value) })
-                });
-                if (!response.ok) throw new Error(await parseErrorResponse(response));
-                await loadThemes();
-                renderAdminThemeEditor();
-            } catch (error) {
-                alert(`Erreur lors du redimensionnement : ${error.message}`);
-            }
-        }
-
-        // Fait occuper au bloc toute la page (largeur 100%, hauteur 100%, coin haut-gauche)
-        async function makeFullPage(blockId) {
-            try {
-                const response = await fetch(`/api/themes?blockId=${encodeURIComponent(blockId)}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ posX: 0, posY: 0, largeur: 100 })
-                });
-                if (!response.ok) throw new Error(await parseErrorResponse(response));
-                await loadThemes();
-                renderAdminThemeEditor();
-            } catch (error) {
-                alert(`Erreur lors du passage en pleine page : ${error.message}`);
-            }
-        }
-
-        async function uploadThemeBackground(themeId, file) {
-            if (!file) return;
-            try {
-                const resized = await resizeImage(file);
-                const fileBase64 = await fileToBase64(resized);
-                const response = await fetch('/api/themes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'uploadBackground', themeId, fileBase64, filename: resized.name, contentType: resized.type })
-                });
-                if (!response.ok) throw new Error(await parseErrorResponse(response));
-                await loadThemes();
-                renderAdminThemeEditor();
-            } catch (error) {
-                alert(`Erreur lors de l'envoi du fond d'écran : ${error.message}`);
-            }
-        }
-
-        async function addTextBlock(themeId, key) {
-            try {
-                const response = await fetch('/api/themes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'addBlock', themeId, type: 'Texte', texte: 'Écris ton texte ici...' })
-                });
-                if (!response.ok) throw new Error(await parseErrorResponse(response));
-                await loadThemes();
-                renderAdminThemeEditor();
-            } catch (error) {
-                alert(`Erreur lors de l'ajout du bloc : ${error.message}`);
-            }
-        }
-
-        async function addImageBlock(themeId, key, file) {
-            if (!file) return;
-            try {
-                const createResponse = await fetch('/api/themes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'addBlock', themeId, type: 'Image' })
-                });
-                if (!createResponse.ok) throw new Error(await parseErrorResponse(createResponse));
-                const created = await createResponse.json();
-
-                const resized = await resizeImage(file);
-                const fileBase64 = await fileToBase64(resized);
-                const uploadResponse = await fetch('/api/themes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'uploadBlockImage', blockId: created.id, fileBase64, filename: resized.name, contentType: resized.type })
-                });
-                if (!uploadResponse.ok) throw new Error(await parseErrorResponse(uploadResponse));
-
-                await loadThemes();
-                renderAdminThemeEditor();
-            } catch (error) {
-                alert(`Erreur lors de l'ajout de l'image : ${error.message}`);
-            }
-        }
-
-        async function uploadExistingBlockImage(blockId, file) {
-            if (!file) return;
-            try {
-                const resized = await resizeImage(file);
-                const fileBase64 = await fileToBase64(resized);
-                const response = await fetch('/api/themes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'uploadBlockImage', blockId, fileBase64, filename: resized.name, contentType: resized.type })
-                });
-                if (!response.ok) throw new Error(await parseErrorResponse(response));
-                await loadThemes();
-                renderAdminThemeEditor();
-            } catch (error) {
-                alert(`Erreur lors du remplacement de l'image : ${error.message}`);
-            }
-        }
-
-        async function saveBlockText(blockId) {
-            const textarea = document.getElementById(`blockText-${blockId}`);
-            if (!textarea) return;
-            try {
-                const response = await fetch(`/api/themes?blockId=${encodeURIComponent(blockId)}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ texte: textarea.value })
-                });
-                if (!response.ok) throw new Error(await parseErrorResponse(response));
-                await loadThemes();
-                alert('Texte enregistré !');
-            } catch (error) {
-                alert(`Erreur lors de l'enregistrement : ${error.message}`);
-            }
-        }
-
-        async function deleteBlock(blockId) {
-            if (!confirm('Supprimer ce bloc définitivement ?')) return;
-            try {
-                const response = await fetch(`/api/themes?blockId=${encodeURIComponent(blockId)}`, { method: 'DELETE' });
-                if (!response.ok) throw new Error(await parseErrorResponse(response));
-                await loadThemes();
-                renderAdminThemeEditor();
-            } catch (error) {
-                alert(`Erreur lors de la suppression : ${error.message}`);
             }
         }
 
