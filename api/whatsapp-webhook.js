@@ -115,7 +115,12 @@ async function extractSourceInfo(url) {
   // automatique, le brouillon sera alors créé avec moins de détails (à compléter à la main).
   try {
     const r = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LesBonnesIdeesBot/1.0; +https://les-bonnes-idees.vercel.app)' }
+      headers: {
+        // Beaucoup de sites bloquent les bots qui s'identifient comme tels ; on se présente
+        // donc comme un navigateur standard pour maximiser les chances d'obtenir la page.
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8'
+      }
     });
     if (!r.ok) throw new Error(`page inaccessible (code ${r.status})`);
     const html = await r.text();
@@ -123,12 +128,39 @@ async function extractSourceInfo(url) {
     const title = extractMeta(html, 'og:title') || extractTitleTag(html);
     const description = extractMeta(html, 'og:description') || extractMeta(html, 'description');
     const image = extractMeta(html, 'og:image') || extractMeta(html, 'twitter:image') || extractFirstImage(html, url);
-    const author = extractMeta(html, 'og:site_name');
+    const author = extractMeta(html, 'og:site_name') || hostnameOf(url);
+    const urlHint = guessFromUrl(url);
 
-    return { platform: 'générique', title, author, thumbnail: image, description };
+    return { platform: 'générique', title: title || urlHint, author, thumbnail: image, description };
   } catch (e) {
     console.error('Lecture générique de la page échouée:', e.message);
-    return { platform: 'inconnu', title: null, author: null, thumbnail: null, description: null };
+    // Dernier recours : même si la page est totalement inaccessible (blocage anti-bot),
+    // le nom de domaine et les mots du chemin de l'URL donnent souvent un indice exploitable
+    // (ex: makerworld.com/models/support-rangement-cables -> "support rangement cables").
+    return { platform: 'inconnu', title: guessFromUrl(url), author: hostnameOf(url), thumbnail: null, description: null };
+  }
+}
+
+function hostnameOf(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch (e) {
+    return null;
+  }
+}
+
+// Déduit un titre approximatif à partir des mots présents dans le chemin de l'URL.
+function guessFromUrl(url) {
+  try {
+    const { hostname, pathname } = new URL(url);
+    const words = decodeURIComponent(pathname)
+      .replace(/^www\./, '')
+      .split(/[\/\-_?=.]+/)
+      .filter(w => w && isNaN(w) && w.length > 2 && !/^(html?|php|aspx?|www)$/i.test(w));
+    if (words.length === 0) return null;
+    return `${words.join(' ')} (${hostname.replace(/^www\./, '')})`;
+  } catch (e) {
+    return null;
   }
 }
 
@@ -206,8 +238,9 @@ Consignes importantes pour que la fiche soit facilement trouvable dans un moteur
 - Le titre doit nommer l'action et l'objet précis concernés (ex: "Déboucher un siphon avec du bicarbonate et du vinaigre"), jamais une formule vague comme "Astuce plomberie" ou "Vu sur la cuisine".
 - Le résumé et le détail doivent citer les mots-clés concrets présents dans le titre/la description d'origine : noms d'outils, de produits, de techniques, de matériaux, de logiciels, de marques, de mesures (ex: "colle époxy", "clé à molette", "réglage de température à 60°C").
 - N'utilise JAMAIS le nom de la catégorie comme substitut au titre ou au résumé.
-- Si le titre original est trop vague pour être précis (ex: juste "Regarde ça 😱"), base-toi sur la description ; si vraiment rien de concret n'est disponible, dis-le explicitement dans fullDetail ("Contenu à vérifier manuellement, la source ne donnait pas assez de détails") plutôt que d'inventer des détails.
-- N'invente aucun fait technique qui ne soit pas suggéré par le titre/la description fournis.`;
+- Exploite TOUS les indices disponibles avant d'abandonner, y compris les plus faibles : le nom de domaine du site (ex: "makerworld.com" = impression 3D, "marmiton.org" = cuisine), les mots présents dans l'URL elle-même, le nom de l'auteur/du site. Un titre ou une description même partiels valent mieux qu'un titre générique.
+- N'utilise la phrase "Contenu à vérifier manuellement" QUE si tu ne disposes vraiment d'aucun mot-clé exploitable (ni titre, ni description, ni mot dans l'URL, ni nom de domaine évocateur) — c'est censé rester rare, pas la réponse par défaut.
+- N'invente aucun fait technique précis qui ne soit pas suggéré par les informations fournies, mais tu peux formuler une hypothèse raisonnable sur le sujet général à partir du domaine/des mots de l'URL (en le présentant comme tel si besoin, ex: "Astuce d'impression 3D repérée sur MakerWorld : titre exact à vérifier sur la page").`;
 
   const model = 'gemini-3-flash-preview';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
