@@ -103,6 +103,11 @@
             padding: 6px 10px; border-radius: 4px; border: 1px solid #eee;
         }
         .admin-source-link a { color: #2a5298; }
+        .bulk-actions-bar {
+            display: flex; align-items: center; gap: 16px; background: #fff3cd;
+            border: 1px solid #ffe08a; border-radius: 10px; padding: 12px 16px; margin-bottom: 15px;
+        }
+        .draft-select-label { display: block; margin-bottom: 10px; font-size: 0.9rem; color: #555; }
     </style>
 </head>
 <body>
@@ -158,7 +163,13 @@
 
         <div id="listView">
             <div class="categories" id="categoriesBar">
-                <button class="category-btn active" onclick="filterCategory('tous', event)">Tous</button>
+                <button class="category-btn active" onclick="filterCategory('tous')">Tous</button>
+                <button class="category-btn" onclick="filterCategory('plomberie')">Plomberie 🔧</button>
+                <button class="category-btn" onclick="filterCategory('electronique')">Électronique ⚡</button>
+                <button class="category-btn" onclick="filterCategory('informatique')">Informatique 💻</button>
+                <button class="category-btn" onclick="filterCategory('impression 3d')">Impression 3D 🖨️</button>
+                <button class="category-btn" onclick="filterCategory('cuisine')">Cuisine 🍳</button>
+                <button class="category-btn" onclick="filterCategory('philosophie')">Bonnes Pensées 🧠</button>
             </div>
 
 
@@ -182,6 +193,26 @@
                 sessionStorage.setItem('adminPassword', adminPassword);
             }
             return adminPassword;
+        }
+
+        // Vérifie le mot de passe AUPRÈS DU SERVEUR avant d'autoriser l'accès au panneau admin
+        // (contrairement à ensureAdminPassword seul, qui ne fait que le demander sans le vérifier).
+        async function verifyAdminAccess() {
+            ensureAdminPassword();
+            if (!adminPassword) return false; // la personne a annulé la fenêtre de mot de passe
+
+            try {
+                const response = await fetch('/api/admin-check', {
+                    headers: { 'x-admin-password': adminPassword }
+                });
+                if (response.ok) return true;
+                alert('Mot de passe admin incorrect.');
+            } catch (error) {
+                alert('Impossible de vérifier le mot de passe (problème de connexion).');
+            }
+            sessionStorage.removeItem('adminPassword');
+            adminPassword = '';
+            return false;
         }
 
         // Comme fetch(), mais ajoute le mot de passe admin et gère le cas où il est incorrect
@@ -224,12 +255,11 @@
                 console.error("Impossible de contacter l'API /api/astuces :", error);
             } finally {
                 handleRoute();
-                renderCategoryButtons();
                 applyFilterAndSearch();
             }
         }
 
-        function handleRoute() {
+        async function handleRoute() {
             const hash = window.location.hash;
             const adminPanel = document.getElementById('adminPanel');
             const pageTitle = document.getElementById('pageTitle');
@@ -238,7 +268,11 @@
             const searchContainer = document.getElementById('searchContainer');
 
             if (hash === '#admin') {
-                ensureAdminPassword();
+                const authorized = await verifyAdminAccess();
+                if (!authorized) {
+                    window.location.hash = ''; // renvoie vers la page publique si le mot de passe est refusé
+                    return;
+                }
                 if (adminPanel) adminPanel.classList.add('active');
                 if (pageTitle) pageTitle.innerText = "Les bonnes idées du web [ADMIN]";
                 if (listView) listView.style.display = '';
@@ -294,10 +328,21 @@
             if (brouillons.length === 0) {
                 queue.innerHTML = '<p style="color: #856404; font-weight: bold;">🎉 Aucun brouillon en attente de validation !</p>';
             } else {
+                const bulkBar = document.createElement('div');
+                bulkBar.className = 'bulk-actions-bar';
+                bulkBar.innerHTML = `
+                    <label><input type="checkbox" id="selectAllDrafts" onchange="toggleSelectAllDrafts(this.checked)"> Tout sélectionner</label>
+                    <button class="btn-validate" onclick="validateSelectedTips()">✅ Valider la sélection</button>
+                `;
+                queue.appendChild(bulkBar);
+
                 brouillons.forEach(tip => {
                     const adminCard = document.createElement('div');
                     adminCard.className = 'admin-card';
                     adminCard.innerHTML = `
+                        <label class="draft-select-label">
+                            <input type="checkbox" class="draft-select" value="${tip.id}"> Sélectionner pour validation groupée
+                        </label>
                         ${buildEditableFields(tip)}
                         <div class="admin-actions">
                             <button class="btn-validate" onclick="validateTip('${tip.id}')">✅ Valider et Publier</button>
@@ -340,16 +385,22 @@
         // Catégories connues (doit correspondre à la liste utilisée côté webhook WhatsApp)
         const KNOWN_CATEGORIES = ['Plomberie', 'Électronique', 'Informatique', 'Impression 3D', 'Cuisine', 'Bonnes Pensées'];
 
+        // Toutes les catégories déjà utilisées (connues + nouvelles créées via l'IA ou l'admin),
+        // pour qu'une catégorie ajoutée une fois soit proposée partout ensuite.
+        function getAllKnownCategories() {
+            const fromData = astucesData.map(t => t.categoryRaw).filter(Boolean);
+            const merged = [...new Set([...KNOWN_CATEGORIES, ...fromData])];
+            return merged.sort((a, b) => a.localeCompare(b, 'fr'));
+        }
+
         function buildCategoryOptions(tip) {
             const current = tip.categoryRaw || '';
-            const options = [...KNOWN_CATEGORIES];
-            // Si l'IA a proposé une catégorie inédite, on l'ajoute en haut de la liste
-            // pour que l'admin la voie et puisse la garder telle quelle.
+            const options = getAllKnownCategories();
             if (current && !options.includes(current)) {
                 options.unshift(current);
             }
             let html = options.map(cat =>
-                `<option value="${cat}" ${cat === current ? 'selected' : ''}>${cat}${!KNOWN_CATEGORIES.includes(cat) ? ' (nouveau, proposé par l\'IA)' : ''}</option>`
+                `<option value="${cat}" ${cat === current ? 'selected' : ''}>${cat}${!KNOWN_CATEGORIES.includes(cat) ? ' (nouvelle catégorie)' : ''}</option>`
             ).join('');
             html += `<option value="__custom__">➕ Nouvelle catégorie...</option>`;
             return html;
@@ -455,28 +506,66 @@
             return { title, summary, fullDetail, category, imageUrl };
         }
 
+        // Cœur de la validation, réutilisé par validateTip (unitaire) et validateSelectedTips (groupée).
+        // Ne fait ni alert() ni rechargement : à la charge de l'appelant.
+        async function doValidate(id) {
+            const fields = readEditedFields(id);
+            if (!fields) throw new Error('Catégorie manquante');
+
+            const response = await adminFetch(`/api/astuces?id=${encodeURIComponent(id)}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...fields, status: 'valide' })
+            });
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || 'Erreur inconnue');
+            }
+            return fields;
+        }
+
         async function validateTip(id) {
             const tip = astucesData.find(t => t.id === id);
             if (!tip) return;
-
-            const fields = readEditedFields(id);
-            if (!fields) return;
-
             try {
-                const response = await adminFetch(`/api/astuces?id=${encodeURIComponent(id)}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...fields, status: 'valide' })
-                });
-                if (!response.ok) {
-                    const err = await response.json().catch(() => ({}));
-                    throw new Error(err.error || 'Erreur inconnue');
-                }
+                const fields = await doValidate(id);
                 alert(`L'astuce "${fields.title}" a été validée !`);
                 await loadAstuces();
             } catch (error) {
                 alert(`Erreur lors de la validation : ${error.message}`);
             }
+        }
+
+        function toggleSelectAllDrafts(checked) {
+            document.querySelectorAll('.draft-select').forEach(cb => { cb.checked = checked; });
+        }
+
+        async function validateSelectedTips() {
+            const ids = Array.from(document.querySelectorAll('.draft-select:checked')).map(cb => cb.value);
+            if (ids.length === 0) {
+                alert('Sélectionne au moins un brouillon à valider.');
+                return;
+            }
+            if (!confirm(`Valider et publier ${ids.length} astuce(s) sélectionnée(s) ?`)) return;
+
+            let successCount = 0;
+            const errors = [];
+            for (const id of ids) {
+                try {
+                    await doValidate(id);
+                    successCount++;
+                } catch (error) {
+                    const tip = astucesData.find(t => t.id === id);
+                    errors.push(`${tip ? tip.title : id} : ${error.message}`);
+                }
+            }
+
+            let message = `${successCount} astuce(s) validée(s) avec succès.`;
+            if (errors.length > 0) {
+                message += `\n\nÉchecs :\n${errors.join('\n')}`;
+            }
+            alert(message);
+            await loadAstuces();
         }
 
         // Enregistre les modifications d'une astuce déjà publiée, sans changer son statut
@@ -544,28 +633,6 @@
                 `;
                 grid.appendChild(card);
             });
-        }
-
-        function renderCategoryButtons() {
-            const bar = document.getElementById('categoriesBar');
-            if (!bar) return;
-
-            const seen = new Map();
-            astucesData.forEach(tip => {
-                if (tip.status !== 'valide' || !tip.category) return;
-                if (!seen.has(tip.category)) {
-                    seen.set(tip.category, tip.categoryLabel || tip.category);
-                }
-            });
-
-            const categories = Array.from(seen.entries()).sort((a, b) => a[1].localeCompare(b[1], 'fr'));
-
-            let html = `<button class="category-btn${currentCategory === 'tous' ? ' active' : ''}" onclick="filterCategory('tous', event)">Tous</button>`;
-            categories.forEach(([key, label]) => {
-                const safeKey = key.replace(/'/g, "\\'");
-                html += `<button class="category-btn${currentCategory === key ? ' active' : ''}" onclick="filterCategory('${safeKey}', event)">${label}</button>`;
-            });
-            bar.innerHTML = html;
         }
 
         function filterCategory(cat, e) {
