@@ -163,13 +163,8 @@
 
         <div id="listView">
             <div class="categories" id="categoriesBar">
-                <button class="category-btn active" onclick="filterCategory('tous')">Tous</button>
-                <button class="category-btn" onclick="filterCategory('plomberie')">Plomberie 🔧</button>
-                <button class="category-btn" onclick="filterCategory('electronique')">Électronique ⚡</button>
-                <button class="category-btn" onclick="filterCategory('informatique')">Informatique 💻</button>
-                <button class="category-btn" onclick="filterCategory('impression 3d')">Impression 3D 🖨️</button>
-                <button class="category-btn" onclick="filterCategory('cuisine')">Cuisine 🍳</button>
-                <button class="category-btn" onclick="filterCategory('philosophie')">Bonnes Pensées 🧠</button>
+                <button class="category-btn active" data-fixed onclick="filterCategory('tous', event)">Tous</button>
+                <!-- Les autres boutons sont générés automatiquement par JS, à partir des catégories réellement utilisées -->
             </div>
 
 
@@ -206,9 +201,10 @@
                     headers: { 'x-admin-password': adminPassword }
                 });
                 if (response.ok) return true;
-                alert('Mot de passe admin incorrect.');
+                const err = await response.json().catch(() => ({}));
+                alert(`Mot de passe admin incorrect (code ${response.status} : ${err.error || 'raison inconnue'}).`);
             } catch (error) {
-                alert('Impossible de vérifier le mot de passe (problème de connexion).');
+                alert(`Impossible de contacter /api/admin-check : ${error.message}`);
             }
             sessionStorage.removeItem('adminPassword');
             adminPassword = '';
@@ -254,6 +250,7 @@
             } catch (error) {
                 console.error("Impossible de contacter l'API /api/astuces :", error);
             } finally {
+                renderCategoriesBar();
                 handleRoute();
                 applyFilterAndSearch();
             }
@@ -632,6 +629,33 @@
                     </div>
                 `;
                 grid.appendChild(card);
+            });
+        }
+
+        // Génère les boutons de catégories à partir des astuces publiées (le bouton "Tous" reste fixe en HTML).
+        function renderCategoriesBar() {
+            const bar = document.getElementById('categoriesBar');
+            if (!bar) return;
+
+            const seen = new Map(); // clé -> libellé affiché
+            astucesData
+                .filter(tip => tip.status === 'valide')
+                .forEach(tip => {
+                    if (tip.category && !seen.has(tip.category)) {
+                        seen.set(tip.category, tip.categoryLabel || tip.categoryRaw || tip.category);
+                    }
+                });
+
+            // On retire les anciens boutons dynamiques (tout sauf "Tous") avant de les regénérer
+            bar.querySelectorAll('.category-btn:not([data-fixed])').forEach(btn => btn.remove());
+
+            const sortedKeys = [...seen.keys()].sort((a, b) => seen.get(a).localeCompare(seen.get(b), 'fr'));
+            sortedKeys.forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn' + (currentCategory === key ? ' active' : '');
+                btn.textContent = seen.get(key);
+                btn.onclick = (e) => filterCategory(key, e);
+                bar.appendChild(btn);
             });
         }
 
